@@ -1,36 +1,37 @@
 # @tiswell/finances
 
-The Finances mini-app for [Tiswell](../TisWell/README.md), developed in its
-own folder but compiled **into** the Tiswell app.
+A standalone finance app in the [Tiswell](../TisWell/README.md) family:
+expense/income log with a monthly in/out/net summary (₱, stored as integer
+centavos).
 
-## How it connects
+## How it connects to Tiswell
 
-- Tiswell's `vite.config.ts` aliases `@tiswell/finances` to this folder's
-  `src/`, and `src/shell/registry.ts` registers the manifest (tile, route,
-  lazy component). No shell internals are edited — the mini-app contract.
-- All storage goes through Tiswell's `TiswellData` interface (`@data/local`),
-  namespace `"finances"`. Because this code runs inside the Tiswell app, it
-  shares the same IndexedDB database as every other mini-app — that is what
-  makes cross-app connectivity (e.g. reading inbox captures) possible.
-- UI comes from Tiswell's design system (`@ui/*`) so it looks like one app.
+This is its **own app with its own database** — Tiswell doesn't compile it
+in. It appears in Tiswell as an embedded tile:
 
-## Working here
+1. Run it (`pnpm dev` → http://localhost:5174).
+2. In Tiswell → Settings → Apps, paste `localhost:5174`.
+3. The tile opens the app embedded under Tiswell's chrome.
 
-Two ways to run:
+Because it lives at its own address, browsers give it separate storage:
+its transactions are not in Tiswell's database. That's the accepted
+trade-off of the all-external architecture.
 
-```sh
-pnpm dev    # standalone at http://localhost:5174 — own sandbox database
-pnpm test   # this package's tests
-```
+## Shared design system
 
-Standalone dev borrows the host's design system and data layer source, but
-runs on its own origin, so its database is a separate dev sandbox — perfect
-for experimenting without touching real data.
+It borrows Tiswell's tokens, UI components, and `TiswellData` layer as
+source, via aliases in [vite.config.ts](vite.config.ts) pointing at
+`../TisWell/src` — so both folders must sit side by side, and the app
+always looks unmistakably Tiswell. `resolve.dedupe` keeps react to a
+single copy.
 
-The real thing always runs from the host:
+## Commands
 
 ```sh
-cd ../TisWell
-pnpm dev    # whole app incl. this mini-app, real shared database
-pnpm build  # bundles this package into the production app
+pnpm dev    # http://localhost:5174
+pnpm test   # money utils tests
 ```
+
+When this app should live on your phone, deploy it to its own URL and
+paste that into Tiswell instead of localhost. (Its build needs the
+sibling TisWell folder present, because of the source aliases.)
