@@ -1,8 +1,9 @@
-# @tiswell/finances
+# Manna (@tiswell/manna)
 
 A standalone finance app in the [Tiswell](../TisWell/README.md) family:
 expense/income log with a monthly in/out/net summary (₱, stored as integer
-centavos).
+centavos). Named for the daily bread provided in the wilderness —
+provision, one day at a time.
 
 ## How it connects to Tiswell
 

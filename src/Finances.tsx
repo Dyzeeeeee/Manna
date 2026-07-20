@@ -56,7 +56,7 @@ export default function Finances() {
 
   return (
     <div className="flex flex-col gap-4 py-2">
-      <h1 className="font-display text-2xl font-semibold">Finances</h1>
+      <h1 className="font-display text-2xl font-semibold">Manna</h1>
 
       <Card className="flex items-end justify-between">
         <div>
