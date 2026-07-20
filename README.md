@@ -16,14 +16,21 @@ own folder but compiled **into** the Tiswell app.
 
 ## Working here
 
-Run everything from the TisWell app folder — it is the host:
+Two ways to run:
+
+```sh
+pnpm dev    # standalone at http://localhost:5174 — own sandbox database
+pnpm test   # this package's tests
+```
+
+Standalone dev borrows the host's design system and data layer source, but
+runs on its own origin, so its database is a separate dev sandbox — perfect
+for experimenting without touching real data.
+
+The real thing always runs from the host:
 
 ```sh
 cd ../TisWell
-pnpm dev    # serves the whole app including this mini-app (live reload works)
-pnpm test   # runs this package's tests too
+pnpm dev    # whole app incl. this mini-app, real shared database
 pnpm build  # bundles this package into the production app
 ```
-
-The devDependencies here exist only so editors resolve types in this folder;
-the host app supplies the real react/lucide at build time.

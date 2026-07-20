@@ -20,5 +20,5 @@
       "@data/*": ["../TisWell/src/data/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src", "dev", "vite.config.ts"]
 }
