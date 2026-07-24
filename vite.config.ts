@@ -29,10 +29,18 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       manifest: {
+        // A stable identity for the installed app, independent of start_url —
+        // without it the browser derives one from the URL, and changing that
+        // later would register as a *different* app rather than an update.
+        id: "/",
         name: "Manna",
         short_name: "Manna",
         description: "Daily bread, accounted for.",
         display: "standalone",
+        /* Light values on purpose: a manifest cannot carry media queries, so
+           these are one fixed pair whatever the system theme is. They only
+           drive the launch splash — the address/status bar follows the
+           theme-color meta tags in index.html, which do adapt. */
         background_color: "#F4EFE6",
         theme_color: "#F4EFE6",
         icons: [

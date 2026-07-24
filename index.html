@@ -6,6 +6,17 @@
     <meta name="description" content="Daily bread, accounted for." />
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F4EFE6" />
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1E1A17" />
+
+    <!-- Android reads display/standalone from the manifest; iOS historically
+         needed these, and still uses them for the home-screen label and the
+         status bar. Without apple-mobile-web-app-capable an older iPhone opens
+         the app in a Safari-ish view with browser chrome instead of standalone,
+         which defeats the point of installing it. -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Manna" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
     <link rel="icon" type="image/svg+xml" href="/icons/mark.svg" />
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
