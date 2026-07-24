@@ -1,2 +1,2 @@
-export { default } from "./Finances";
-export type { MonthSummary, Txn } from "./money";
+export { default } from "./Manna";
+export type { Category, MonthSummary, Txn, Wallet } from "./money";

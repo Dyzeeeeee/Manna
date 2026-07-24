@@ -3,27 +3,81 @@ import { fileURLToPath, URL } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import { VitePWA } from "vite-plugin-pwa";
 
 const here = (p: string) => fileURLToPath(new URL(p, import.meta.url));
 
-/* Standalone dev harness only — production builds happen in ../TisWell,
-   which compiles this package into the real app. Running here uses the
-   host's design system + data layer source, but on its own origin, so
-   the database is a separate dev sandbox (browser storage is per-origin). */
+/* Manna is its own app on its own origin — Tiswell embeds it as a tile, it
+   doesn't compile it in. It borrows the host's design system and data layer
+   as source, and because that data layer now talks to a shared Instant app
+   rather than per-origin browser storage, both reach the same database. */
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    VitePWA({
+      registerType: "autoUpdate",
+      manifest: {
+        name: "Manna",
+        short_name: "Manna",
+        description: "Daily bread, accounted for.",
+        display: "standalone",
+        background_color: "#F4EFE6",
+        theme_color: "#F4EFE6",
+        icons: [
+          { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+          { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+          {
+            src: "/icons/maskable-512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "maskable",
+          },
+        ],
+      },
+      workbox: {
+        globPatterns: ["**/*.{js,css,html,svg,png,ico,woff2}"],
+        navigateFallback: "/index.html",
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: "StaleWhileRevalidate",
+            options: { cacheName: "google-fonts-stylesheets" },
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "google-fonts-webfonts",
+              expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
+      },
+    }),
+  ],
   resolve: {
     alias: [
       { find: "@ui", replacement: here("../TisWell/src/ui") },
       { find: "@data", replacement: here("../TisWell/src/data") },
     ],
     // host source files resolve packages from the host's node_modules —
-    // dedupe pins everything to one copy so hooks don't break
-    dedupe: ["react", "react-dom", "lucide-react", "dexie"],
+    // dedupe pins everything to one copy so hooks don't break. @instantdb/react
+    // especially: a second copy would mean a second client, and the session
+    // handed down from Tiswell would land in the wrong one.
+    dedupe: ["react", "react-dom", "lucide-react", "@instantdb/react", "dexie"],
   },
   server: {
+    // bind all interfaces so a phone on the same wifi can reach the dev server
+    host: true,
     port: 5174,
     strictPort: true,
     fs: { allow: [here("."), here("../TisWell")] },
+  },
+  preview: {
+    host: true,
+    port: 5174,
+    strictPort: true,
   },
 });
