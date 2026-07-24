@@ -13,11 +13,12 @@
     "noEmit": true,
     "skipLibCheck": true,
 
-    /* Editor-only resolution — at build time the TisWell app provides these
-       via its own Vite/TS aliases. */
+    /* Two locations, tried in order — the sibling checkout you edit locally,
+       then the git submodule that exists when building on a host. Mirrors the
+       same fallback in vite.config.ts. */
     "paths": {
-      "@ui/*": ["../TisWell/src/ui/*"],
-      "@data/*": ["../TisWell/src/data/*"]
+      "@ui/*": ["../TisWell/src/ui/*", "./TisWell/src/ui/*"],
+      "@data/*": ["../TisWell/src/data/*", "./TisWell/src/data/*"]
     }
   },
   "include": ["src", "dev", "vite.config.ts"]

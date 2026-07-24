@@ -28,6 +28,7 @@
     "vitest": "^4.1.10"
   },
   "dependencies": {
-    "@instantdb/react": "^1.0.50"
+    "@instantdb/react": "^1.0.50",
+    "dexie": "^4.4.4"
   }
 }

@@ -1,3 +1,5 @@
+/// <reference types="vitest/config" />
+import { existsSync } from "node:fs";
 import { fileURLToPath, URL } from "node:url";
 
 import tailwindcss from "@tailwindcss/vite";
@@ -6,6 +8,15 @@ import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
 const here = (p: string) => fileURLToPath(new URL(p, import.meta.url));
+
+/* Where Tiswell's source is found, in two situations:
+   - working locally, it's the sibling folder you actually edit
+   - building on a host, there is no sibling — only the git submodule cloned
+     into this repo, which is why TisWell is a submodule at all
+   Sibling wins so local edits are live without touching the submodule. Note
+   the consequence: after changing Tiswell, push it *and* bump the submodule
+   pointer here, or a deploy will build against the older pinned commit. */
+const TISWELL = existsSync(here("../TisWell/src")) ? here("../TisWell") : here("TisWell");
 
 /* Manna is its own app on its own origin — Tiswell embeds it as a tile, it
    doesn't compile it in. It borrows the host's design system and data layer
@@ -59,8 +70,8 @@ export default defineConfig({
   ],
   resolve: {
     alias: [
-      { find: "@ui", replacement: here("../TisWell/src/ui") },
-      { find: "@data", replacement: here("../TisWell/src/data") },
+      { find: "@ui", replacement: `${TISWELL}/src/ui` },
+      { find: "@data", replacement: `${TISWELL}/src/data` },
     ],
     // host source files resolve packages from the host's node_modules —
     // dedupe pins everything to one copy so hooks don't break. @instantdb/react
@@ -73,11 +84,17 @@ export default defineConfig({
     host: true,
     port: 5174,
     strictPort: true,
-    fs: { allow: [here("."), here("../TisWell")] },
+    fs: { allow: [here("."), TISWELL] },
   },
   preview: {
     host: true,
     port: 5174,
     strictPort: true,
+  },
+  test: {
+    /* The TisWell submodule carries its own suite, and once it sits inside this
+       repo vitest would happily run it too — `pnpm test` here should say
+       whether *Manna* is sound, not re-run the host app's tests. */
+    exclude: ["**/node_modules/**", "**/dist/**", "TisWell/**"],
   },
 });
