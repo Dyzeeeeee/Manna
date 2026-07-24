@@ -1,0 +1,16 @@
+{
+  // Manna is a static PWA — Vite builds it to dist/ and Cloudflare just serves
+  // those files. There is deliberately no "main": with nothing but an `assets`
+  // block this deploys as static assets with no Worker script in front of it,
+  // which is all this app needs. The database is InstantDB, reached from the
+  // browser, so there is no server of ours anywhere in the request path.
+  "name": "manna",
+  "compatibility_date": "2026-07-24",
+  "assets": {
+    "directory": "./dist",
+    // Every URL falls back to index.html: Manna is a single page that switches
+    // screens in state, and an installed PWA opening a deep link must still get
+    // the app rather than a 404.
+    "not_found_handling": "single-page-application"
+  }
+}
