@@ -10,9 +10,11 @@ import {
 import { useEffect, useState } from "react";
 
 import { AddSheet } from "./AddSheet";
+import { parseSentence } from "./capture";
 import { Home } from "./Home";
 import { Month } from "./Month";
 import { recurringForMonth, type Txn, type TxnKind } from "./money";
+import type { AddDraft } from "./parse";
 import { Owed } from "./Owed";
 import { Plan } from "./Plan";
 import { Settings } from "./Settings";
@@ -56,6 +58,9 @@ export default function Manna() {
      rather than in Home because both the quick actions and the bottom bar's +
      open it, and the + has to work from any tab. */
   const [adding, setAdding] = useState<TxnKind | null>(null);
+  /* A pre-fill for the add sheet from natural-language capture, cleared whenever
+     the sheet is opened blank so a stale draft never leaks into a manual log. */
+  const [addDraft, setAddDraft] = useState<AddDraft | undefined>();
 
   /* All views read the same live lists, so the data is fetched once here and
      passed down — a transaction logged on the phone reaches every screen
@@ -81,6 +86,22 @@ export default function Manna() {
     const timer = setTimeout(() => setHighlightId(undefined), HIGHLIGHT_MS);
     return () => clearTimeout(timer);
   }, [highlightId]);
+
+  /* Open the add sheet blank — the manual path. Clearing the draft here is what
+     keeps a prior capture from bleeding into a plain + log. */
+  const openAdd = (kind: TxnKind) => {
+    setAddDraft(undefined);
+    setAdding(kind);
+  };
+
+  /* Natural-language capture: parse the sentence into a draft, then open the
+     sheet on it. Rejection propagates so the capture box shows its own hint; the
+     sheet opens only on success. */
+  const capture = async (sentence: string) => {
+    const { draft } = await parseSentence(sentence, categories, wallets);
+    setAddDraft(draft);
+    setAdding(draft.kind ?? "expense");
+  };
 
   if (owed) {
     return (
@@ -152,7 +173,8 @@ export default function Manna() {
           allotments={allotments}
           onSelect={setEditing}
           onNavigate={setTab}
-          onAdd={setAdding}
+          onAdd={openAdd}
+          onCapture={capture}
           onSettings={() => setSettings(true)}
           highlightId={highlightId}
         />
@@ -180,7 +202,7 @@ export default function Manna() {
       <BottomNav
         tab={tab}
         onTab={setTab}
-        onCapture={() => setAdding("expense")}
+        onCapture={() => openAdd("expense")}
         waiting={waiting}
       />
 
@@ -189,7 +211,11 @@ export default function Manna() {
         categories={categories}
         wallets={wallets}
         txns={txns}
-        onClose={() => setAdding(null)}
+        draft={addDraft}
+        onClose={() => {
+          setAdding(null);
+          setAddDraft(undefined);
+        }}
         onLogged={(id) => {
           // land where the new row is, so the save is something you see happen
           setHighlightId(id);

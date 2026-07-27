@@ -1,0 +1,17 @@
+{
+  // Isolated from the app's tsconfig: the Worker runs on workerd, not the DOM,
+  // and types against @cloudflare/workers-types instead of lib.dom. It pulls in
+  // the two React-free source files it shares with the app.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "verbatimModuleSyntax": true,
+    "types": ["@cloudflare/workers-types"]
+  },
+  "include": ["index.ts", "../src/parse.ts", "../src/money.ts"]
+}

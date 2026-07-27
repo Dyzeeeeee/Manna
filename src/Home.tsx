@@ -3,6 +3,8 @@ import { ChevronRight, Plus, Settings as SettingsIcon } from "lucide-react";
 import { Button } from "@ui/Button";
 
 import { accentBg, Amount } from "./Amount";
+import { captureConfigured } from "./capture";
+import { CaptureBox } from "./CaptureBox";
 import {
   accentOf,
   allotmentProgress,
@@ -35,6 +37,9 @@ interface HomeProps {
   onSelect: (txn: Txn) => void;
   onNavigate: (tab: "month" | "plan") => void;
   onAdd: (kind: TxnKind) => void;
+  /** Send a spoken/typed sentence to the parse Worker; resolves once the add
+   *  sheet has opened on the resulting draft, rejects if the parse failed. */
+  onCapture: (sentence: string) => Promise<void>;
   onSettings: () => void;
   /** The transaction just logged, briefly marked so the save is visible. */
   highlightId?: string;
@@ -59,6 +64,7 @@ export function Home({
   onSelect,
   onNavigate,
   onAdd,
+  onCapture,
   onSettings,
   highlightId,
 }: HomeProps) {
@@ -102,6 +108,11 @@ export function Home({
             included
           </p>
         </div>
+
+        {/* The fast path, when it's wired up: say what you spent and confirm on
+            the review panel. The centre + and the numpad wizard remain the
+            manual and offline way in. */}
+        {captureConfigured && <CaptureBox onCapture={onCapture} />}
 
         <section className="flex flex-col gap-2">
           <h2 className="px-1 font-display text-sm font-semibold text-umber-700">

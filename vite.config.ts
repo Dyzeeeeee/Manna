@@ -92,6 +92,13 @@ export default defineConfig({
     host: true,
     port: 5174,
     strictPort: true,
+    // Vite 8 blocks Host headers it doesn't recognise; these let a friendly
+    // name resolve to the dev server. `manna.localhost` needs no hosts-file
+    // entry (browsers map *.localhost to loopback) and counts as a secure
+    // context, so the service worker still registers — unlike `manna.test`,
+    // which needs a `127.0.0.1 manna.test` line in the hosts file and, being
+    // plain http on a custom name, won't run the PWA/offline layer.
+    allowedHosts: ["manna.localhost", "manna.test"],
     fs: { allow: [here("."), TISWELL] },
   },
   preview: {

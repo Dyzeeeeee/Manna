@@ -1,0 +1,23 @@
+{
+  // manna-parse — a standalone Worker, deployed separately from the PWA so the
+  // app's own deploy (../wrangler.jsonc) stays pure static assets with no server
+  // in its request path. This is the only place the Anthropic key lives.
+  //
+  //   Deploy:  npx wrangler deploy -c worker/wrangler.jsonc
+  //   Secrets: npx wrangler secret put ANTHROPIC_API_KEY -c worker/wrangler.jsonc
+  //            npx wrangler secret put APP_TOKEN          -c worker/wrangler.jsonc
+  //   Dev:     npx wrangler dev -c worker/wrangler.jsonc
+  "name": "manna-parse",
+  "main": "index.ts",
+  "compatibility_date": "2026-07-24",
+  // The Anthropic SDK uses Node built-ins; this flag gives the Worker their
+  // workerd-native shims.
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    // Browser origins allowed to call the endpoint; anything else is refused at
+    // CORS. Comma-separated. The 517x entries cover Vite's dev server, which
+    // hops to the next free port when one is taken. Replace the pages.dev
+    // placeholder with the PWA's real production origin before deploying.
+    "ALLOWED_ORIGINS": "http://localhost:5173,http://localhost:5174,http://localhost:5175,https://manna.pages.dev"
+  }
+}

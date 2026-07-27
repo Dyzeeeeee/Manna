@@ -6,6 +6,7 @@ import {
   allotmentsRunningHot,
   categoryBreakdown,
   categorySpend,
+  centsToEntry,
   daysOnList,
   debtBalance,
   owedTotals,
@@ -153,6 +154,28 @@ describe("numpad entry", () => {
     expect(pressKey("1", "del")).toBe("");
     expect(formatEntry("")).toBe("0");
     expect(parseAmount("")).toBeNull();
+  });
+});
+
+describe("centsToEntry", () => {
+  it("drops the fraction on a round amount", () => {
+    expect(centsToEntry(20000)).toBe("200");
+  });
+
+  it("pads a partial-centavo fraction to two places", () => {
+    expect(centsToEntry(20050)).toBe("200.50");
+    expect(centsToEntry(20005)).toBe("200.05");
+  });
+
+  it("round-trips through parseAmount for a seeded draft", () => {
+    for (const cents of [20000, 20050, 20005, 125050, 99]) {
+      expect(parseAmount(centsToEntry(cents))).toBe(cents);
+    }
+  });
+
+  it("yields an empty entry for a non-positive amount", () => {
+    expect(centsToEntry(0)).toBe("");
+    expect(centsToEntry(-500)).toBe("");
   });
 });
 

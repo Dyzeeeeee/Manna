@@ -83,11 +83,15 @@ export function useDebts(): Debt[] {
 
 const SEEDED_AT = "2026-01-01T00:00:00.000Z";
 
-/* The starting taxonomy, straight from CLAUDE.md's category rules: eleven
-   expense parents and four income parents, two levels and no deeper, each
-   parent owning a colour. Written as a compact tree and expanded below rather
-   than as ~75 hand-written records — the shape is the point, and it stays
-   readable enough to edit. */
+/* The starting taxonomy. CLAUDE.md fixes the parents — eleven expense, four
+   income, two levels and no deeper, each owning a colour — and the full designed
+   subcategory set is seeded with them. (Rule 4 argues for discovering subs from
+   real spending rather than designing them up front; the deliberate call here
+   was to ship the whole set and let Settings prune whatever goes unused.)
+
+   Parents are listed in the order you pick them on the add sheet — heaviest
+   first — because a parent is chosen on every log and that order is part of the
+   five-second bar. The list index becomes each parent's `order` below. */
 interface SeedParent {
   name: string;
   accent: Accent;
@@ -95,50 +99,58 @@ interface SeedParent {
 }
 
 const EXPENSE_TREE: SeedParent[] = [
+  // no "Delivery": it's a mode of dining out (note the app), not its own kind
   {
     name: "Food",
     accent: "clay",
-    subs: ["Groceries", "Dining Out", "Coffee & Snacks", "Delivery", "Water Refill"],
+    subs: ["Groceries", "Dining Out", "Coffee & Snacks", "Water Refill"],
   },
+  // "Registration" only — insurance is consolidated under Financial
   {
     name: "Transportation",
     accent: "indigo",
-    subs: ["Fuel", "Fare", "Maintenance & Repair", "Parking & Toll", "Registration & Insurance"],
+    subs: ["Fuel", "Fare", "Maintenance & Repair", "Parking & Toll", "Registration"],
   },
   {
     name: "Housing & Utilities",
     accent: "teal",
-    subs: ["Rent", "Electricity", "Water", "Internet", "LPG", "Household Supplies", "Repairs"],
+    subs: ["Rent", "Electricity", "Water Bill", "Internet", "LPG", "Household Supplies", "Repairs"],
   },
-  {
-    name: "Communication & Tech",
-    accent: "slate",
-    subs: ["Load & Phone Plan", "Subscriptions", "Devices", "Software & Domains"],
-  },
-  { name: "Health", accent: "rose", subs: ["Medicine", "Consultation", "Dental", "Fitness"] },
-  { name: "Personal", accent: "plum", subs: ["Clothing", "Grooming", "Personal Care"] },
   {
     // gold on purpose: Giving is a normal parent, but it is the one the tithe
-    // strip and the floor allotment will read from
+    // strip and the floor allotment read from
     name: "Giving",
     accent: "gold",
     subs: ["Tithe", "Offering", "Sponsorship", "Gifts", "Family Support", "Hospitality"],
   },
-  { name: "Learning", accent: "moss", subs: ["Books", "Courses", "Materials"] },
-  { name: "Leisure", accent: "rust", subs: ["Entertainment", "Travel & Outings", "Hobbies"] },
+  // "Grooming & Care" is the old Grooming + Personal Care, merged
+  { name: "Personal", accent: "plum", subs: ["Clothing", "Grooming & Care"] },
+  { name: "Health", accent: "rose", subs: ["Medicine", "Consultation", "Dental", "Fitness"] },
+  // no "Subscriptions": recurring digital spend files by purpose (streaming →
+  // Leisure, cloud/tools → Software & Domains, gym → Fitness). Being recurring
+  // is the Recurring feature's job, not a category's.
   {
-    name: "Financial",
-    accent: "sage",
-    subs: ["Loan & Installment", "Interest & Fees", "Taxes", "Insurance"],
+    name: "Communication & Tech",
+    accent: "slate",
+    subs: ["Load & Phone Plan", "Devices", "Software & Domains"],
   },
+  { name: "Leisure", accent: "rust", subs: ["Entertainment", "Travel & Outings", "Hobbies"] },
+  // insurance lives here (one home; the type goes in the note). Debt principal
+  // moves as a transfer carrying debt_id — never a category — so "Loan &
+  // Installment" is absent and only the *cost* of borrowing is ever spending.
+  { name: "Financial", accent: "sage", subs: ["Interest & Fees", "Taxes", "Insurance"] },
+  { name: "Learning", accent: "moss", subs: ["Books", "Courses", "Materials"] },
   { name: "Work", accent: "ochre", subs: ["Tools & Equipment", "Fees & Licenses"] },
 ];
 
+/* Income parents share the green end of the palette so in and out read apart at
+   a glance. A repaid loan is a transfer, not income, so "Debt Repaid to You" is
+   deliberately absent. */
 const INCOME_TREE: SeedParent[] = [
   { name: "Earned", accent: "teal", subs: ["Salary", "Freelance", "Bonus", "Overtime"] },
   { name: "Business", accent: "moss", subs: ["Sales", "Commission"] },
-  { name: "Passive", accent: "plum", subs: ["Interest", "Dividends", "Rental"] },
-  { name: "Other", accent: "slate", subs: ["Gifts Received", "Refunds", "Resale"] },
+  { name: "Passive", accent: "olive", subs: ["Interest", "Dividends", "Rental"] },
+  { name: "Other", accent: "sage", subs: ["Gifts Received", "Refunds", "Resale"] },
 ];
 
 const slug = (name: string) =>
@@ -189,26 +201,72 @@ const SEED_WALLETS: Wallet[] = [
   createdAt: SEEDED_AT,
 }));
 
-/** Gives a fresh install something to pick from. Gated on `ready` by the caller
- *  so an empty-but-unsynced mirror isn't mistaken for a new account — that
- *  would re-seed categories you had deliberately deleted. */
+/* Bump when the default taxonomy in the trees above changes. A fresh database
+   is seeded once, but an install that already seeded an *older* default set
+   would otherwise be frozen on it — which is exactly what happened when the
+   lean taxonomy replaced the original. When the stored version is behind this
+   one, the current defaults are re-applied and the default rows we've since
+   retired are removed — see reconcileDefaultCategories. */
+const SEED_VERSION = "3";
+const SEED_VERSION_KEY = "manna:seed-version";
+
+/* Seeded categories carry derived ids (cat-exp-…, cat-inc-…); a category you add
+   in Settings gets a random uuid. So this matches only the rows Manna seeded,
+   which is what lets reconciliation update or drop defaults without ever
+   disturbing a category you made yourself. */
+const DEFAULT_CATEGORY_ID = /^cat-(exp|inc)-/;
+
+/** Bring an already-seeded install up to the current defaults: upsert today's
+ *  set (adds new parents/subs, applies the reordered `order` and recoloured
+ *  accents) and delete the default rows no longer in it. Categories you created
+ *  (uuid ids) are left untouched. It does re-apply default names, so a renamed
+ *  default would revert — acceptable because this runs only on a deliberate
+ *  SEED_VERSION bump, i.e. when the defaults are meant to move. */
+async function reconcileDefaultCategories(existing: Category[]): Promise<void> {
+  const current = new Set(SEED_CATEGORIES.map((c) => c.id));
+  const retired = existing.filter((c) => DEFAULT_CATEGORY_ID.test(c.id) && !current.has(c.id));
+  await Promise.all([
+    ...SEED_CATEGORIES.map((c) => data.put(NS_CATEGORIES, c)),
+    ...retired.map((c) => data.remove(NS_CATEGORIES, c.id)),
+  ]);
+}
+
+/* One run at a time: seeding and reconciliation both change categories.length,
+   which re-fires the effect mid-flight — this guard stops a reconcile from
+   overlapping itself before the version flag is written. */
+let seedInFlight = false;
+
+/** Gives a fresh install something to pick from, and brings an existing one up
+ *  to the current defaults after a SEED_VERSION bump. Gated on `ready` so an
+ *  empty-but-unsynced mirror isn't mistaken for a new account — that would
+ *  re-seed categories you had deliberately deleted. */
 export function useSeedDefaults(): void {
   const ready = useDataReady();
   const categories = useCategories();
   const wallets = useWallets();
 
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || seedInFlight) return;
+    seedInFlight = true;
     void (async () => {
-      // in parallel: the taxonomy is ~75 records, and awaiting each one's round
+      // in parallel: the taxonomy is ~70 records, and awaiting each one's round
       // trip in turn made a fresh install sit on an empty screen for seconds
       if (categories.length === 0) {
         await Promise.all(SEED_CATEGORIES.map((c) => data.put(NS_CATEGORIES, c)));
+      } else if (localStorage.getItem(SEED_VERSION_KEY) !== SEED_VERSION) {
+        await reconcileDefaultCategories(categories);
       }
+      // written only after the awaits settle: a failure leaves it unset so the
+      // reconcile is retried on the next load rather than silently skipped
+      localStorage.setItem(SEED_VERSION_KEY, SEED_VERSION);
       if (wallets.length === 0) {
         await Promise.all(SEED_WALLETS.map((w) => data.put(NS_WALLETS, w)));
       }
-    })().catch((err: unknown) => console.error("manna: could not seed defaults", err));
+    })()
+      .catch((err: unknown) => console.error("manna: could not seed defaults", err))
+      .finally(() => {
+        seedInFlight = false;
+      });
   }, [ready, categories.length, wallets.length]);
 }
 

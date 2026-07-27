@@ -262,6 +262,17 @@ export function formatEntry(entry: string): string {
   return decimals === undefined ? grouped : `${grouped}.${decimals}`;
 }
 
+/** The inverse of `parseAmount`: centavos back to the keypad entry string —
+ *  20050 → "200.50", 20000 → "200". Lets a pre-filled draft (e.g. from
+ *  natural-language capture) seed the numpad so editing picks up exactly where
+ *  the parsed figure left off. Non-positive input yields an empty entry. */
+export function centsToEntry(cents: number): string {
+  if (!Number.isFinite(cents) || cents <= 0) return "";
+  const whole = Math.floor(cents / 100);
+  const frac = cents % 100;
+  return frac === 0 ? String(whole) : `${whole}.${String(frac).padStart(2, "0")}`;
+}
+
 const php = new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" });
 
 export function formatMoney(cents: number): string {
