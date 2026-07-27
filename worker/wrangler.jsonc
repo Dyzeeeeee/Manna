@@ -18,6 +18,6 @@
     // CORS. Comma-separated. The 517x entries cover Vite's dev server, which
     // hops to the next free port when one is taken. Replace the pages.dev
     // placeholder with the PWA's real production origin before deploying.
-    "ALLOWED_ORIGINS": "http://localhost:5173,http://localhost:5174,http://localhost:5175,https://manna.pages.dev"
+    "ALLOWED_ORIGINS": "http://localhost:5173,http://localhost:5174,http://localhost:5175,https://manna.jdmalaluan2.workers.dev"
   }
 }
