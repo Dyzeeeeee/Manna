@@ -1,6 +1,5 @@
-import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
-
 import { Amount } from "./Amount";
+import { IconIn, IconOut } from "./icons";
 
 interface BalanceCardProps {
   label: string;
@@ -26,13 +25,13 @@ export function BalanceCard({ label, cents, income, expense }: BalanceCardProps)
         <div className="flex gap-5 text-sm">
           {income !== undefined && (
             <span className="flex items-center gap-1.5">
-              <ArrowDownLeft aria-hidden className="size-4 text-sage-500" />
+              <IconIn aria-hidden className="size-4 text-sage-500" />
               <Amount cents={income} sign="none" className="text-balance-ink/80" />
             </span>
           )}
           {expense !== undefined && (
             <span className="flex items-center gap-1.5">
-              <ArrowUpRight aria-hidden className="size-4 text-balance-ink/50" />
+              <IconOut aria-hidden className="size-4 text-balance-ink/50" />
               <Amount cents={expense} sign="none" className="text-balance-ink/80" />
             </span>
           )}

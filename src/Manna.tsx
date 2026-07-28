@@ -1,17 +1,9 @@
-import {
-  CalendarDays,
-  CircleCheck,
-  House,
-  Plus,
-  Settings as SettingsIcon,
-  Wallet,
-  type LucideIcon,
-} from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { AddSheet } from "./AddSheet";
 import { parseSentence } from "./capture";
 import { Home } from "./Home";
+import { IconAdd, IconSettings, NAV_GLYPHS, type Icon } from "./icons";
 import { Month } from "./Month";
 import { recurringForMonth, type Txn, type TxnKind } from "./money";
 import type { AddDraft } from "./parse";
@@ -32,14 +24,22 @@ import {
 import { TxnSheet } from "./TxnSheet";
 import { Wallets } from "./Wallets";
 
-const tabs: { value: Tab; label: string; icon: LucideIcon }[] = [
-  { value: "home", label: "Home", icon: House },
-  { value: "month", label: "Month", icon: CalendarDays },
-  { value: "plan", label: "Plan", icon: CircleCheck },
-  { value: "wallets", label: "Wallets", icon: Wallet },
-];
-
 type Tab = "home" | "month" | "plan" | "wallets";
+
+interface TabDef {
+  value: Tab;
+  label: string;
+  /** Both weights: the bar fills the section you are in and outlines the rest. */
+  fill: Icon;
+  line: Icon;
+}
+
+const tabs: TabDef[] = [
+  { value: "home", label: "Home", ...NAV_GLYPHS.home },
+  { value: "month", label: "Month", ...NAV_GLYPHS.month },
+  { value: "plan", label: "Plan", ...NAV_GLYPHS.plan },
+  { value: "wallets", label: "Wallets", ...NAV_GLYPHS.wallets },
+];
 
 /** How long a freshly logged row stays marked. Long enough to catch the eye
  *  after the sheet closes, short enough not to become part of the design. */
@@ -140,19 +140,24 @@ export default function Manna() {
 
         <div className="flex items-center gap-2">
           <nav className="flex rounded-control bg-clay-200 p-1">
-            {tabs.map((t) => (
-              <button
-                key={t.value}
-                type="button"
-                aria-current={tab === t.value ? "page" : undefined}
-                onClick={() => setTab(t.value)}
-                className={`min-h-9 rounded-control px-4 font-display text-sm font-semibold transition-colors duration-150 ${
-                  tab === t.value ? "bg-raised text-umber-900 shadow-soft" : "text-umber-700"
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
+            {tabs.map((t) => {
+              const active = tab === t.value;
+              const Glyph = active ? t.fill : t.line;
+              return (
+                <button
+                  key={t.value}
+                  type="button"
+                  aria-current={active ? "page" : undefined}
+                  onClick={() => setTab(t.value)}
+                  className={`flex min-h-9 items-center gap-1.5 rounded-control px-4 font-display text-sm font-semibold transition-colors duration-150 ${
+                    active ? "bg-raised text-umber-900 shadow-soft" : "text-umber-700"
+                  }`}
+                >
+                  <Glyph aria-hidden className="size-4" />
+                  {t.label}
+                </button>
+              );
+            })}
           </nav>
           <button
             type="button"
@@ -160,7 +165,7 @@ export default function Manna() {
             aria-label="Settings"
             className="flex size-11 items-center justify-center rounded-control text-umber-700 transition-colors duration-150 hover:bg-clay-200 hover:text-umber-900"
           >
-            <SettingsIcon className="size-5" />
+            <IconSettings className="size-5" />
           </button>
         </div>
       </header>
@@ -271,7 +276,7 @@ function BottomNav({
             aria-label="Log something"
             className="-translate-y-4 flex size-14 items-center justify-center rounded-control bg-sage-500 text-clay-50 shadow-soft transition duration-150 hover:brightness-105 active:brightness-95"
           >
-            <Plus aria-hidden className="size-6" />
+            <IconAdd aria-hidden className="size-6" />
           </button>
         </div>
 
@@ -297,13 +302,15 @@ function NavItem({
   onClick,
   badge = 0,
 }: {
-  item: { value: Tab; label: string; icon: LucideIcon };
+  item: TabDef;
   active: boolean;
   onClick: () => void;
   /** Count of things waiting on a decision, shown over the icon. */
   badge?: number;
 }) {
-  const Icon = item.icon;
+  /* Filled when you are on it. At 20px with a two-word label under it, a weight
+     change reads as "you are here" faster than the colour shift alone did. */
+  const Glyph = active ? item.fill : item.line;
   return (
     <button
       type="button"
@@ -314,7 +321,7 @@ function NavItem({
       }`}
     >
       <span className="relative">
-        <Icon aria-hidden className="size-5" />
+        <Glyph aria-hidden className="size-5" />
         {badge > 0 && (
           <span
             aria-label={`${badge} waiting`}

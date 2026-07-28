@@ -1,5 +1,6 @@
-import { Mic, Send } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
+
+import { IconMic, IconSend } from "./icons";
 
 /* The slice of the Web Speech API this uses. It isn't in the DOM lib types, and
    in practice only Chromium ships it (Android is the target), so it's feature-
@@ -89,7 +90,7 @@ export function CaptureBox({ onCapture }: { onCapture: (sentence: string) => Pro
               listening ? "bg-sage-500/15 text-sage-500" : "text-umber-700 hover:bg-clay-200"
             }`}
           >
-            <Mic className={`size-5 ${listening ? "animate-pulse" : ""}`} />
+            <IconMic className={`size-5 ${listening ? "animate-pulse" : ""}`} />
           </button>
         )}
 
@@ -115,7 +116,7 @@ export function CaptureBox({ onCapture }: { onCapture: (sentence: string) => Pro
           aria-label="Read and log"
           className="flex size-10 shrink-0 items-center justify-center rounded-control bg-sage-500 text-clay-50 transition duration-150 hover:brightness-105 active:brightness-95 disabled:opacity-40"
         >
-          <Send className={`size-4 ${busy ? "animate-pulse" : ""}`} />
+          <IconSend className={`size-4 ${busy ? "animate-pulse" : ""}`} />
         </button>
       </div>
 

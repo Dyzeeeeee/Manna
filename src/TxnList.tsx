@@ -2,6 +2,7 @@ import { Amount, CategoryIcon } from "./Amount";
 import {
   accentOf,
   findCategory,
+  glyphOf,
   isSameDay,
   parentOf,
   type Category,
@@ -142,6 +143,7 @@ function Row({
 
   const category = findCategory(categories, categoryId);
   const parent = parentOf(categories, categoryId);
+  const { own, inherited } = glyphOf(categories, categoryId);
   // only worth showing when it isn't the thing already in the title — a
   // transaction logged straight to a bare parent would otherwise say "Food · Food"
   const parentName = parent && parent.id !== category?.id ? parent.name : undefined;
@@ -165,6 +167,8 @@ function Row({
       <CategoryIcon
         accent={accentOf(categories, categoryId)}
         name={category?.name}
+        icon={own}
+        inherit={inherited}
         transfer={transfer}
       />
 

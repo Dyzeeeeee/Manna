@@ -1,4 +1,4 @@
-import { Delete } from "lucide-react";
+import { IconBackspace } from "./icons";
 
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "del"];
 
@@ -34,7 +34,7 @@ export function Numpad({
               : "bg-raised text-umber-900"
           }`}
         >
-          {key === "del" ? <Delete aria-hidden className="size-5" /> : key}
+          {key === "del" ? <IconBackspace aria-hidden className="size-5" /> : key}
         </button>
       ))}
     </div>

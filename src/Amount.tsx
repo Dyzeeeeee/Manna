@@ -1,26 +1,4 @@
-import {
-  ArrowRightLeft,
-  Banknote,
-  BookOpen,
-  Briefcase,
-  Bus,
-  GraduationCap,
-  HandHeart,
-  HeartPulse,
-  House,
-  Landmark,
-  PiggyBank,
-  Receipt,
-  Shirt,
-  ShoppingBag,
-  Smartphone,
-  Sparkles,
-  Tag,
-  Ticket,
-  UtensilsCrossed,
-  type LucideIcon,
-} from "lucide-react";
-
+import { glyph, iconFor, IconTransfer, walletIconName } from "./icons";
 import { formatMoney, type Accent } from "./money";
 
 /* Tailwind only emits classes it can see written out, so these have to be
@@ -70,53 +48,36 @@ export function CategoryDot({ accent, className = "" }: { accent: Accent; classN
   );
 }
 
-/* Matched on the category's name rather than stored against its id: categories
-   are free text you can rename or invent, so there's no icon field to keep in
-   sync and a brand-new "Groceries" gets the right glyph on sight. First hit
-   wins, so order matters — "gift" must beat the broader money words. */
-const glyphs: [RegExp, LucideIcon][] = [
-  [/food|grocer|eat|meal|restaurant|coffee|snack|market|dining|delivery|water refill/i, UtensilsCrossed],
-  [/transport|fare|bus|jeep|taxi|grab|fuel|gas|commut|parking|toll|registr|maintenance/i, Bus],
-  [/rent|electric|water|lpg|household|housing|repair/i, House],
-  [/bill|utilit|internet|wifi|cable/i, Receipt],
-  [/phone|load|mobile|sim|subscription|software|domain|device|tech/i, Smartphone],
-  [/health|medic|doctor|pharma|hospital|dental|clinic|fitness|consult/i, HeartPulse],
-  [/cloth|shirt|wear|apparel/i, Shirt],
-  [/groom|personal care|beauty|salon|barber/i, Sparkles],
-  [/giving|tithe|church|donat|offering|charity|alm|sponsor|hospitality|family support/i, HandHeart],
-  [/gift|present/i, Tag],
-  [/book|read/i, BookOpen],
-  [/school|tuition|educ|course|class|learn|material/i, GraduationCap],
-  [/entertain|travel|outing|hobby|leisure|movie|game/i, Ticket],
-  [/loan|installment|interest|fee|tax|insurance|financial|debt/i, Landmark],
-  [/tool|equipment|license|work/i, Briefcase],
-  [/saving|invest|fund|emergency|passive|dividend|rental/i, PiggyBank],
-  [/shop|store|purchase/i, ShoppingBag],
-  [/salary|pay|wage|income|bonus|allowance|earned|business|sales|commission|refund|resale/i, Banknote],
-];
-
-function glyphFor(name: string | undefined): LucideIcon {
-  if (!name) return Tag;
-  for (const [pattern, icon] of glyphs) if (pattern.test(name)) return icon;
-  return Tag;
-}
-
 /** A category as a tinted tile, the way a transaction row reads in one glance:
  *  shape first, then the name. The bare dot it replaces carried the same colour
- *  information but gave the eye nothing to land on down a long list. */
+ *  information but gave the eye nothing to land on down a long list.
+ *
+ *  `icon` and `inherit` are the two halves of `CategoryGlyph` — a parent's own
+ *  choice outranks the name match, a family's icon falls in behind it. */
 export function CategoryIcon({
   accent,
   name,
+  icon,
+  inherit,
   transfer = false,
   className = "",
+  glyphClassName = "size-5",
 }: {
   accent: Accent;
   name?: string;
+  /** The key stored on this exact category. Parents only, and authoritative. */
+  icon?: string;
+  /** The parent's key, for a subcategory. Used only if the name suggests
+   *  nothing of its own. */
+  inherit?: string;
   /** Transfers have no category, so they get the one fixed glyph instead. */
   transfer?: boolean;
   className?: string;
+  /** Set alongside a smaller `className` — the tile and its glyph scale
+   *  together, and Tailwind needs both sizes written out. */
+  glyphClassName?: string;
 }) {
-  const Glyph = transfer ? ArrowRightLeft : glyphFor(name);
+  const Glyph = transfer ? IconTransfer : iconFor(icon, name, inherit);
   return (
     <span
       aria-hidden
@@ -124,9 +85,24 @@ export function CategoryIcon({
         transfer ? "bg-clay-200 text-umber-700" : tile[accent]
       } ${className}`}
     >
-      <Glyph className="size-5" />
+      <Glyph className={glyphClassName} />
     </span>
   );
+}
+
+/** A wallet's shape, guessed from its name — GCash and Cash are not the same
+ *  thing, and a column of identical wallet outlines tells you nothing. Wallets
+ *  carry no icon field of their own, so this is pure derivation: rename one and
+ *  the glyph follows. */
+export function WalletIcon({
+  name,
+  className = "size-5",
+}: {
+  name?: string;
+  className?: string;
+}) {
+  const Glyph = glyph(walletIconName(name)).line;
+  return <Glyph aria-hidden className={`shrink-0 ${className}`} />;
 }
 
 interface AmountProps {

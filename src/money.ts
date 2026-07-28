@@ -50,7 +50,8 @@ export type TxnKind = Txn["kind"];
  *
  *  Colour lives on the parent — "Each parent owns a colour. Bars, ticks, and
  *  chips read from it." Subs resolve to their parent's accent rather than
- *  storing their own, so recolouring a parent moves its whole family at once. */
+ *  storing their own, so recolouring a parent moves its whole family at once.
+ *  The icon follows the same rule for the same reason. */
 export interface Category {
   id: string;
   name: string;
@@ -59,6 +60,12 @@ export interface Category {
   parentId?: string;
   /** Parents only. Subs inherit it via `accentOf`. */
   accent?: Accent;
+  /** Parents only, and chosen in Settings — a key into the icon catalogue, not
+   *  a component. Left a plain string here on purpose: money.ts knows nothing
+   *  about which icon library is installed, and a key that has since been
+   *  retired must not become a type error on data already written. Resolution
+   *  and the fallback for an unknown key live in icons.tsx. */
+  icon?: string;
   /** Stable position within its list (parents) or within its parent (subs), so
    *  the order you arranged them in doesn't reshuffle as records sync. */
   order: number;
@@ -199,6 +206,32 @@ export function parentOf(categories: Category[], id: string | undefined): Catego
  *  accent, falling back to the id-hash for the uncategorised/deleted case. */
 export function accentOf(categories: Category[], id: string | undefined): Accent {
   return parentOf(categories, id)?.accent ?? categoryAccent(id ?? UNCATEGORISED);
+}
+
+/** The two ways a category can come by an icon, kept apart because they carry
+ *  different authority.
+ *
+ *  A parent's icon is a decision someone made in Settings, so it outranks
+ *  anything guessed. A subcategory has no icon field of its own — rule 1 keeps
+ *  the taxonomy two levels deep and the icon follows the colour in living on the
+ *  parent — but "Dental" under Health should still show a tooth rather than the
+ *  family's heartbeat. So the parent's icon reaches a sub only as a fallback,
+ *  after the sub's own name has had its say. */
+export interface CategoryGlyph {
+  /** Stored on this exact category. Parents only, and authoritative. */
+  own?: string;
+  /** The parent's, when this is a subcategory. A floor, not a ceiling. */
+  inherited?: string;
+}
+
+/** Sibling of `accentOf`, but returning the pair above rather than one value —
+ *  the resolution itself, and the name matching behind it, live in icons.tsx
+ *  where the icon library is known. */
+export function glyphOf(categories: Category[], id: string | undefined): CategoryGlyph {
+  const category = findCategory(categories, id);
+  if (!category) return {};
+  if (!category.parentId) return { own: category.icon };
+  return { inherited: findCategory(categories, category.parentId)?.icon };
 }
 
 const byOrder = (a: Category, b: Category) =>
@@ -674,6 +707,10 @@ export interface QuickPick {
   parentId: string;
   name: string;
   accent: Accent;
+  /** The parent's icon key, carried along so a chip can draw its glyph without
+   *  a second lookup. A quick pick is always a subcategory, so this is the
+   *  inherited fallback — see `CategoryGlyph`. */
+  inheritIcon?: string;
 }
 
 /** The handful of subcategories to surface as one-tap chips on the add sheet,
@@ -703,5 +740,6 @@ export function topCategories(
       parentId: c.parentId ?? c.id,
       name: c.name,
       accent: accentOf(categories, c.id),
+      inheritIcon: glyphOf(categories, c.id).inherited,
     }));
 }

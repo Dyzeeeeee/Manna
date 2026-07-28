@@ -1,9 +1,10 @@
+import { glyph, IconIn, IconOut, type Icon } from "./icons";
 import type { KindFilter } from "./money";
 
-const options: { value: KindFilter; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "income", label: "Income" },
-  { value: "expense", label: "Expense" },
+const options: { value: KindFilter; label: string; icon: Icon }[] = [
+  { value: "all", label: "All", icon: glyph("stack").line },
+  { value: "income", label: "Income", icon: IconIn },
+  { value: "expense", label: "Expense", icon: IconOut },
 ];
 
 /** Pills rather than the segmented track used for the tabs. Filtering what
@@ -28,12 +29,13 @@ export function FilterChips({
             type="button"
             aria-pressed={selected}
             onClick={() => onChange(option.value)}
-            className={`min-h-9 rounded-control px-4 font-display text-sm font-semibold transition-colors duration-150 ${
+            className={`flex min-h-9 items-center gap-1.5 rounded-control px-4 font-display text-sm font-semibold transition-colors duration-150 ${
               selected
                 ? "bg-sage-500 text-clay-50"
                 : "bg-clay-100 text-umber-700 hover:bg-clay-200 hover:text-umber-900"
             }`}
           >
+            <option.icon aria-hidden className="size-4" />
             {option.label}
           </button>
         );

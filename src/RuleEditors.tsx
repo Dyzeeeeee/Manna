@@ -1,12 +1,16 @@
-import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@ui/Button";
 import { Input } from "@ui/Input";
 import { Select } from "@ui/Select";
 
+import { CategoryIcon, WalletIcon } from "./Amount";
+import { glyph, IconAdd, IconDelete, type Icon } from "./icons";
 import {
+  accentOf,
+  findCategory,
   formatMoney,
+  glyphOf,
   parentCategories,
   parseAmount,
   subcategoriesOf,
@@ -24,7 +28,13 @@ import {
 } from "./store";
 
 /** The two-level category picker as a grouped native select — shared by all
- *  three editors below, because every rule points at a category. */
+ *  three editors below, because every rule points at a category.
+ *
+ *  A native select can't carry an icon in its options, so the chosen category's
+ *  tile sits beside the control and follows the selection. That keeps the
+ *  platform picker — faster and more accessible on a phone than anything
+ *  hand-rolled — while still showing what was chosen the way every other screen
+ *  shows it. */
 function CategorySelect({
   categories,
   value,
@@ -36,20 +46,32 @@ function CategorySelect({
   onChange: (id: string) => void;
   label: string;
 }) {
+  const chosen = findCategory(categories, value);
+  const { own, inherited } = glyphOf(categories, value);
   return (
-    <Select value={value} onChange={(e) => onChange(e.target.value)} aria-label={label}>
-      <option value="">No category</option>
-      {parentCategories(categories, "expense").map((parent) => (
-        <optgroup key={parent.id} label={parent.name}>
-          <option value={parent.id}>{parent.name} — whole category</option>
-          {subcategoriesOf(categories, parent.id).map((sub) => (
-            <option key={sub.id} value={sub.id}>
-              {sub.name}
-            </option>
-          ))}
-        </optgroup>
-      ))}
-    </Select>
+    <div className="flex items-center gap-2">
+      <CategoryIcon
+        accent={accentOf(categories, value)}
+        name={chosen?.name}
+        icon={own}
+        inherit={inherited}
+        className={`size-9 ${chosen ? "" : "opacity-40"}`}
+        glyphClassName="size-4"
+      />
+      <Select value={value} onChange={(e) => onChange(e.target.value)} aria-label={label}>
+        <option value="">No category</option>
+        {parentCategories(categories, "expense").map((parent) => (
+          <optgroup key={parent.id} label={parent.name}>
+            <option value={parent.id}>{parent.name} — whole category</option>
+            {subcategoriesOf(categories, parent.id).map((sub) => (
+              <option key={sub.id} value={sub.id}>
+                {sub.name}
+              </option>
+            ))}
+          </optgroup>
+        ))}
+      </Select>
+    </div>
   );
 }
 
@@ -69,10 +91,14 @@ function DeleteButton({ onClick, label }: { onClick: () => void; label: string }
       aria-label={label}
       className="flex size-9 shrink-0 items-center justify-center rounded-control text-umber-700 transition-colors duration-150 hover:bg-clay-200 hover:text-accent-rust"
     >
-      <Trash2 className="size-4" />
+      <IconDelete className="size-4" />
     </button>
   );
 }
+
+const IconDay: Icon = glyph("calendar").line;
+const IconCeiling: Icon = glyph("scales").line;
+const IconFloor: Icon = glyph("hand-heart").line;
 
 /* ── Recurring ────────────────────────────────────────────────────────────── */
 
@@ -96,29 +122,42 @@ export function RecurringEditor({
 
       {recurring.length > 0 && (
         <div className="overflow-hidden rounded-tile bg-clay-100 shadow-soft">
-          {recurring.map((item) => (
-            <Row key={item.id}>
-              <div className="min-w-0 flex-1">
-                <p className="truncate">{item.name}</p>
-                <p className="truncate text-sm text-umber-700">
-                  {[
-                    categories.find((c) => c.id === item.categoryId)?.name,
-                    wallets.find((w) => w.id === item.walletId)?.name,
-                    `day ${item.dayOfMonth} of the month`,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </p>
-              </div>
-              <span className="shrink-0 font-display font-semibold tabular-nums">
-                {formatMoney(item.amountCents)}
-              </span>
-              <DeleteButton
-                onClick={() => void removeRecurring(item.id)}
-                label={`Delete ${item.name}`}
-              />
-            </Row>
-          ))}
+          {recurring.map((item) => {
+            const { own, inherited } = glyphOf(categories, item.categoryId);
+            const category = findCategory(categories, item.categoryId);
+            return (
+              <Row key={item.id}>
+                <CategoryIcon
+                  accent={accentOf(categories, item.categoryId)}
+                  name={category?.name ?? item.name}
+                  icon={own}
+                  inherit={inherited}
+                  className="size-9"
+                  glyphClassName="size-4"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate">{item.name}</p>
+                  <p className="flex items-center gap-1.5 truncate text-sm text-umber-700">
+                    <IconDay aria-hidden className="size-3.5 shrink-0" />
+                    {[
+                      category?.name,
+                      wallets.find((w) => w.id === item.walletId)?.name,
+                      `day ${item.dayOfMonth}`,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
+                </div>
+                <span className="shrink-0 font-display font-semibold tabular-nums">
+                  {formatMoney(item.amountCents)}
+                </span>
+                <DeleteButton
+                  onClick={() => void removeRecurring(item.id)}
+                  label={`Delete ${item.name}`}
+                />
+              </Row>
+            );
+          })}
         </div>
       )}
 
@@ -130,7 +169,7 @@ export function RecurringEditor({
         />
       ) : (
         <Button variant="ghost" onClick={() => setAdding(true)} className="gap-2 self-center">
-          <Plus className="size-4" />
+          <IconAdd className="size-4" />
           Add a recurring item
         </Button>
       )}
@@ -209,17 +248,23 @@ function RecurringForm({
         onChange={setCategoryId}
         label="Category"
       />
-      <Select
-        value={walletId}
-        onChange={(e) => setWalletId(e.target.value)}
-        aria-label="Wallet"
-      >
-        {wallets.map((w) => (
-          <option key={w.id} value={w.id}>
-            {w.name}
-          </option>
-        ))}
-      </Select>
+      <div className="flex items-center gap-2">
+        <WalletIcon
+          name={wallets.find((w) => w.id === walletId)?.name}
+          className="size-5 shrink-0 text-umber-700"
+        />
+        <Select
+          value={walletId}
+          onChange={(e) => setWalletId(e.target.value)}
+          aria-label="Wallet"
+        >
+          {wallets.map((w) => (
+            <option key={w.id} value={w.id}>
+              {w.name}
+            </option>
+          ))}
+        </Select>
+      </div>
 
       <div className="flex justify-end gap-2">
         <Button variant="ghost" onClick={onDone} className="px-4">
@@ -253,27 +298,39 @@ export function AllotmentEditor({
 
       {allotments.length > 0 && (
         <div className="overflow-hidden rounded-tile bg-clay-100 shadow-soft">
-          {allotments.map((item) => (
-            <Row key={item.id}>
-              <div className="min-w-0 flex-1">
-                <p className="truncate">
-                  {categories.find((c) => c.id === item.categoryId)?.name ?? "Deleted category"}
-                </p>
-                <p className="truncate text-sm text-umber-700">
-                  {item.kind === "floor"
-                    ? "Floor — at least this much"
-                    : "Ceiling — at most this much"}
-                </p>
-              </div>
-              <span className="shrink-0 font-display font-semibold tabular-nums">
-                {formatMoney(item.limitCents)}
-              </span>
-              <DeleteButton
-                onClick={() => void removeAllotment(item.id)}
-                label="Delete allotment"
-              />
-            </Row>
-          ))}
+          {allotments.map((item) => {
+            const { own, inherited } = glyphOf(categories, item.categoryId);
+            const category = findCategory(categories, item.categoryId);
+            const KindIcon = item.kind === "floor" ? IconFloor : IconCeiling;
+            return (
+              <Row key={item.id}>
+                <CategoryIcon
+                  accent={accentOf(categories, item.categoryId)}
+                  name={category?.name}
+                  icon={own}
+                  inherit={inherited}
+                  className="size-9"
+                  glyphClassName="size-4"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate">{category?.name ?? "Deleted category"}</p>
+                  <p className="flex items-center gap-1.5 truncate text-sm text-umber-700">
+                    <KindIcon aria-hidden className="size-3.5 shrink-0" />
+                    {item.kind === "floor"
+                      ? "Floor — at least this much"
+                      : "Ceiling — at most this much"}
+                  </p>
+                </div>
+                <span className="shrink-0 font-display font-semibold tabular-nums">
+                  {formatMoney(item.limitCents)}
+                </span>
+                <DeleteButton
+                  onClick={() => void removeAllotment(item.id)}
+                  label="Delete allotment"
+                />
+              </Row>
+            );
+          })}
         </div>
       )}
 
@@ -281,7 +338,7 @@ export function AllotmentEditor({
         <AllotmentForm categories={categories} onDone={() => setAdding(false)} />
       ) : (
         <Button variant="ghost" onClick={() => setAdding(true)} className="gap-2 self-center">
-          <Plus className="size-4" />
+          <IconAdd className="size-4" />
           Add an allotment
         </Button>
       )}
@@ -333,19 +390,23 @@ function AllotmentForm({
       />
 
       <div className="flex rounded-control bg-clay-200 p-1">
-        {(["ceiling", "floor"] as const).map((k) => (
-          <button
-            key={k}
-            type="button"
-            onClick={() => setKind(k)}
-            aria-pressed={kind === k}
-            className={`min-h-11 flex-1 rounded-control font-display text-sm font-semibold transition-colors duration-150 ${
-              kind === k ? "bg-raised text-umber-900 shadow-soft" : "text-umber-700"
-            }`}
-          >
-            {k === "ceiling" ? "Ceiling" : "Floor"}
-          </button>
-        ))}
+        {(["ceiling", "floor"] as const).map((k) => {
+          const KindIcon = k === "floor" ? IconFloor : IconCeiling;
+          return (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setKind(k)}
+              aria-pressed={kind === k}
+              className={`flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-control font-display text-sm font-semibold transition-colors duration-150 ${
+                kind === k ? "bg-raised text-umber-900 shadow-soft" : "text-umber-700"
+              }`}
+            >
+              <KindIcon aria-hidden className="size-4" />
+              {k === "ceiling" ? "Ceiling" : "Floor"}
+            </button>
+          );
+        })}
       </div>
 
       <div className="flex justify-end gap-2">

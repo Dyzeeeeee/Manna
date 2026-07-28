@@ -1,11 +1,20 @@
-import { ChevronLeft, Plus } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@ui/Button";
 import { Input } from "@ui/Input";
 import { Select } from "@ui/Select";
 
-import { Amount } from "./Amount";
+import { Amount, WalletIcon } from "./Amount";
+import {
+  glyph,
+  IconAdd,
+  IconApprove,
+  IconBack,
+  IconDelete,
+  IconForward,
+  IconIn,
+  IconOut,
+} from "./icons";
 import {
   debtBalance,
   debtPayments,
@@ -27,9 +36,13 @@ interface OwedProps {
 }
 
 const SECTIONS = [
-  { direction: "owe" as const, heading: "You owe" },
-  { direction: "owed" as const, heading: "Owed to you" },
+  { direction: "owe" as const, heading: "You owe", icon: IconOut },
+  { direction: "owed" as const, heading: "Owed to you", icon: IconIn },
 ];
+
+const IconPerson = glyph("group").line;
+const IconDue = glyph("clock").line;
+const IconSettled = glyph("trophy").line;
 
 /** Money borrowed and lent, both directions.
  *
@@ -47,7 +60,7 @@ export function Owed({ debts, txns, wallets, onBack, onLogged }: OwedProps) {
         onClick={onBack}
         className="flex items-center gap-1 self-start py-1 font-display text-sm font-semibold text-umber-700 transition-colors duration-150 hover:text-umber-900"
       >
-        <ChevronLeft aria-hidden className="size-4" />
+        <IconBack aria-hidden className="size-4" />
         Back to wallets
       </button>
 
@@ -63,15 +76,16 @@ export function Owed({ debts, txns, wallets, onBack, onLogged }: OwedProps) {
         </div>
       )}
 
-      {SECTIONS.map(({ direction, heading }) => {
+      {SECTIONS.map(({ direction, heading, icon: DirectionIcon }) => {
         const rows = balances.filter((b) => b.debt.direction === direction);
         if (rows.length === 0) return null;
         const total = rows.reduce((sum, r) => sum + r.balanceCents, 0);
 
         return (
           <section key={direction} className="flex flex-col gap-2">
-            <div className="flex items-baseline justify-between gap-3 px-1">
-              <h2 className="font-display text-xs font-semibold uppercase tracking-wider text-umber-700">
+            <div className="flex items-center justify-between gap-3 px-1">
+              <h2 className="flex items-center gap-1.5 font-display text-xs font-semibold uppercase tracking-wider text-umber-700">
+                <DirectionIcon aria-hidden className="size-4" />
                 {heading}
               </h2>
               <Amount
@@ -100,7 +114,7 @@ export function Owed({ debts, txns, wallets, onBack, onLogged }: OwedProps) {
         <DebtForm onDone={() => setAdding(false)} />
       ) : (
         <Button variant="ghost" onClick={() => setAdding(true)} className="gap-2 self-center">
-          <Plus className="size-4" />
+          <IconAdd className="size-4" />
           Add a debt or a loan
         </Button>
       )}
@@ -128,8 +142,11 @@ function DebtCard({
 
   return (
     <div className={`flex flex-col gap-3 rounded-tile bg-clay-100 p-4 shadow-soft ${settled ? "opacity-60" : ""}`}>
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="min-w-0 flex-1 truncate font-display font-semibold">{debt.person}</span>
+      <div className="flex items-center justify-between gap-3">
+        <span className="flex min-w-0 flex-1 items-center gap-2 truncate font-display font-semibold">
+          <IconPerson aria-hidden className="size-4 shrink-0 text-umber-700" />
+          {debt.person}
+        </span>
         <Amount
           cents={balanceCents}
           sign="none"
@@ -145,9 +162,10 @@ function DebtCard({
         {owe ? "paid" : "collected"}
         {debt.note && ` · ${debt.note}`}
         {debt.dueAt && (
-          <span className="text-accent-gold">
-            {" "}
-            · due {new Date(debt.dueAt).toLocaleDateString("en", { day: "numeric", month: "long" })}
+          <span className="inline-flex items-center gap-1 text-accent-gold">
+            {" · "}
+            <IconDue aria-hidden className="size-3.5" />
+            due {new Date(debt.dueAt).toLocaleDateString("en", { day: "numeric", month: "long" })}
           </span>
         )}
       </p>
@@ -161,12 +179,17 @@ function DebtCard({
 
       {settled ? (
         <div className="flex items-center justify-between gap-3">
-          <p className="text-sm text-sage-500">Settled</p>
+          <p className="flex items-center gap-1.5 text-sm text-sage-500">
+            <IconSettled aria-hidden className="size-4" />
+            Settled
+          </p>
           <button
             type="button"
             onClick={() => void removeDebt(debt.id)}
-            className="rounded-control px-3 py-1.5 font-display text-xs font-semibold text-umber-700 transition-colors duration-150 hover:bg-clay-200 hover:text-accent-rust"
+            aria-label={`Remove ${debt.person}`}
+            className="flex items-center gap-1.5 rounded-control px-3 py-1.5 font-display text-xs font-semibold text-umber-700 transition-colors duration-150 hover:bg-clay-200 hover:text-accent-rust"
           >
+            <IconDelete aria-hidden className="size-3.5" />
             Remove
           </button>
         </div>
@@ -179,7 +202,12 @@ function DebtCard({
           onLogged={onLogged}
         />
       ) : (
-        <Button variant="ghost" onClick={() => setPaying(true)} className="border border-sand-300">
+        <Button
+          variant="ghost"
+          onClick={() => setPaying(true)}
+          className="gap-2 border border-sand-300"
+        >
+          {owe ? <IconOut className="size-4" /> : <IconIn className="size-4" />}
           {owe ? "Record a payment" : "Record a repayment"}
         </Button>
       )}
@@ -189,8 +217,14 @@ function DebtCard({
           <button
             type="button"
             onClick={() => setShowHistory(!showHistory)}
-            className="font-display text-xs font-semibold text-umber-700"
+            className="flex items-center gap-1.5 font-display text-xs font-semibold text-umber-700"
           >
+            <IconForward
+              aria-hidden
+              className={`size-3.5 transition-transform duration-200 ${
+                showHistory ? "rotate-90" : ""
+              }`}
+            />
             {showHistory ? "Hide" : "Show"} {payments.length}{" "}
             {payments.length === 1 ? "payment" : "payments"}
           </button>
@@ -272,23 +306,34 @@ function PaymentForm({
         />
       </div>
 
-      <Select
-        value={walletId}
-        onChange={(e) => setWalletId(e.target.value)}
-        aria-label={debt.direction === "owe" ? "Pay from wallet" : "Receive into wallet"}
-      >
-        {wallets.map((w) => (
-          <option key={w.id} value={w.id}>
-            {debt.direction === "owe" ? `From ${w.name}` : `Into ${w.name}`}
-          </option>
-        ))}
-      </Select>
+      <div className="flex items-center gap-2">
+        <WalletIcon
+          name={wallets.find((w) => w.id === walletId)?.name}
+          className="size-5 shrink-0 text-umber-700"
+        />
+        <Select
+          value={walletId}
+          onChange={(e) => setWalletId(e.target.value)}
+          aria-label={debt.direction === "owe" ? "Pay from wallet" : "Receive into wallet"}
+        >
+          {wallets.map((w) => (
+            <option key={w.id} value={w.id}>
+              {debt.direction === "owe" ? `From ${w.name}` : `Into ${w.name}`}
+            </option>
+          ))}
+        </Select>
+      </div>
 
       <div className="flex justify-end gap-2">
         <Button variant="ghost" onClick={onDone} className="px-4">
           Cancel
         </Button>
-        <Button onClick={() => void submit()} disabled={!valid || busy} className="tabular-nums">
+        <Button
+          onClick={() => void submit()}
+          disabled={!valid || busy}
+          className="gap-2 tabular-nums"
+        >
+          <IconApprove aria-hidden className="size-4" />
           {busy ? "Logging…" : `Log ${amountCents !== null ? formatMoney(amountCents) : ""}`.trim()}
         </Button>
       </div>
@@ -327,8 +372,8 @@ function DebtForm({ onDone }: { onDone: () => void }) {
       <div className="flex rounded-control bg-clay-200 p-1">
         {(
           [
-            { value: "owe", label: "I borrowed" },
-            { value: "owed", label: "I lent" },
+            { value: "owe", label: "I borrowed", icon: IconIn },
+            { value: "owed", label: "I lent", icon: IconOut },
           ] as const
         ).map((d) => (
           <button
@@ -336,10 +381,11 @@ function DebtForm({ onDone }: { onDone: () => void }) {
             type="button"
             onClick={() => setDirection(d.value)}
             aria-pressed={direction === d.value}
-            className={`min-h-11 flex-1 rounded-control font-display text-sm font-semibold transition-colors duration-150 ${
+            className={`flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-control font-display text-sm font-semibold transition-colors duration-150 ${
               direction === d.value ? "bg-raised text-umber-900 shadow-soft" : "text-umber-700"
             }`}
           >
+            <d.icon aria-hidden className="size-4" />
             {d.label}
           </button>
         ))}

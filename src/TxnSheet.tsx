@@ -5,9 +5,13 @@ import { Input } from "@ui/Input";
 import { Select } from "@ui/Select";
 import { Sheet } from "@ui/Sheet";
 
+import { CategoryIcon, WalletIcon } from "./Amount";
+import { glyph, IconDelete, IconTransfer } from "./icons";
 import {
+  accentOf,
   findCategory,
   formatMoney,
+  glyphOf,
   parentCategories,
   parseAmount,
   subcategoriesOf,
@@ -16,6 +20,10 @@ import {
   type Wallet,
 } from "./money";
 import { removeTxn, updateTxn } from "./store";
+
+const IconAmount = glyph("coins").line;
+const IconNote = glyph("quill").line;
+const IconDate = glyph("calendar").line;
 
 interface TxnSheetProps {
   txn: Txn | null;
@@ -99,95 +107,120 @@ function TxnForm({ txn, categories, wallets, onClose }: TxnSheetProps & { txn: T
       }}
       className="flex flex-col gap-3"
     >
-      <Input
-        inputMode="decimal"
-        value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-        aria-label="Amount in pesos"
-        className="tabular-nums"
-      />
+      <Labelled icon={<IconAmount className="size-5" />}>
+        <Input
+          inputMode="decimal"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          aria-label="Amount in pesos"
+          className="tabular-nums"
+        />
+      </Labelled>
 
       {transfer ? (
         <div className="flex items-center gap-2">
-          <Select
-            value={walletId}
-            onChange={(e) => setWalletId(e.target.value)}
-            aria-label="From wallet"
-          >
-            {wallets.map((w) => (
-              <option key={w.id} value={w.id}>
-                {w.name}
-              </option>
-            ))}
-          </Select>
-          <span aria-hidden className="shrink-0 text-umber-700">
-            →
-          </span>
-          <Select
-            value={toWalletId}
-            onChange={(e) => setToWalletId(e.target.value)}
-            aria-label="To wallet"
-          >
-            {wallets.map((w) => (
-              <option key={w.id} value={w.id}>
-                {w.name}
-              </option>
-            ))}
-          </Select>
+          <Labelled icon={<WalletIcon name={walletNameOf(wallets, walletId)} />}>
+            <Select
+              value={walletId}
+              onChange={(e) => setWalletId(e.target.value)}
+              aria-label="From wallet"
+            >
+              {wallets.map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.name}
+                </option>
+              ))}
+            </Select>
+          </Labelled>
+          <IconTransfer aria-hidden className="size-4 shrink-0 text-umber-700" />
+          <Labelled icon={<WalletIcon name={walletNameOf(wallets, toWalletId)} />}>
+            <Select
+              value={toWalletId}
+              onChange={(e) => setToWalletId(e.target.value)}
+              aria-label="To wallet"
+            >
+              {wallets.map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.name}
+                </option>
+              ))}
+            </Select>
+          </Labelled>
         </div>
       ) : (
         <>
-          <Select
-            value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
-            aria-label="Category"
-          >
-            <option value="">Uncategorised</option>
-            {archived && (
-              <option value={archived.id}>{archived.name} (archived)</option>
-            )}
-            {/* grouped, because the list is two levels and a flat run of sixty
-                names would be unreadable in a native picker */}
-            {parents.map((parent) => (
-              <optgroup key={parent.id} label={parent.name}>
-                <option value={parent.id}>{parent.name} — no subcategory</option>
-                {subcategoriesOf(categories, parent.id).map((sub) => (
-                  <option key={sub.id} value={sub.id}>
-                    {sub.name}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </Select>
-          <Select value={walletId} onChange={(e) => setWalletId(e.target.value)} aria-label="Wallet">
-            {wallets.map((w) => (
-              <option key={w.id} value={w.id}>
-                {w.name}
-              </option>
-            ))}
-          </Select>
+          <div className="flex items-center gap-2">
+            <CategoryIcon
+              accent={accentOf(categories, categoryId || undefined)}
+              name={findCategory(categories, categoryId)?.name}
+              icon={glyphOf(categories, categoryId).own}
+              inherit={glyphOf(categories, categoryId).inherited}
+              className={`size-9 ${categoryId ? "" : "opacity-40"}`}
+              glyphClassName="size-4"
+            />
+            <Select
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              aria-label="Category"
+            >
+              <option value="">Uncategorised</option>
+              {archived && (
+                <option value={archived.id}>{archived.name} (archived)</option>
+              )}
+              {/* grouped, because the list is two levels and a flat run of sixty
+                  names would be unreadable in a native picker */}
+              {parents.map((parent) => (
+                <optgroup key={parent.id} label={parent.name}>
+                  <option value={parent.id}>{parent.name} — no subcategory</option>
+                  {subcategoriesOf(categories, parent.id).map((sub) => (
+                    <option key={sub.id} value={sub.id}>
+                      {sub.name}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </Select>
+          </div>
+          <Labelled icon={<WalletIcon name={walletNameOf(wallets, walletId)} />}>
+            <Select
+              value={walletId}
+              onChange={(e) => setWalletId(e.target.value)}
+              aria-label="Wallet"
+            >
+              {wallets.map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.name}
+                </option>
+              ))}
+            </Select>
+          </Labelled>
         </>
       )}
 
-      <Input
-        placeholder="Note"
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-        aria-label="Note"
-      />
-      <Input
-        type="date"
-        value={date}
-        onChange={(e) => setDate(e.target.value)}
-        aria-label="Date"
-      />
+      <Labelled icon={<IconNote className="size-5" />}>
+        <Input
+          placeholder="Note"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          aria-label="Note"
+        />
+      </Labelled>
+      <Labelled icon={<IconDate className="size-5" />}>
+        <Input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          aria-label="Date"
+        />
+      </Labelled>
 
       {transfer && walletId && walletId === toWalletId && (
         <p className="text-sm text-umber-700">A transfer needs two different wallets.</p>
       )}
 
       <div className="flex items-center justify-between gap-3">
-        <Button variant="ghost" onClick={() => void destroy()} className="px-4">
+        <Button variant="ghost" onClick={() => void destroy()} className="gap-1.5 px-4">
+          <IconDelete className="size-4" />
           Delete
         </Button>
         <Button type="submit" disabled={!valid} className="tabular-nums">
@@ -195,5 +228,23 @@ function TxnForm({ txn, categories, wallets, onClose }: TxnSheetProps & { txn: T
         </Button>
       </div>
     </form>
+  );
+}
+
+const walletNameOf = (wallets: Wallet[], id: string) =>
+  wallets.find((w) => w.id === id)?.name;
+
+/** A field with its glyph beside it. The design system's Input and Select are
+ *  plain boxes on purpose, so the icon sits outside rather than forking them —
+ *  which keeps every row on this form identifiable without touching Tiswell's
+ *  components. */
+function Labelled({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <div className="flex min-w-0 flex-1 items-center gap-2">
+      <span aria-hidden className="shrink-0 text-umber-700">
+        {icon}
+      </span>
+      <div className="min-w-0 flex-1">{children}</div>
+    </div>
   );
 }

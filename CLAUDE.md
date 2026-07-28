@@ -68,7 +68,17 @@ Health, Personal, Giving, Learning, Leisure, Financial, Work.
 
 Income parents: Earned, Business, Passive, Other.
 
-Each parent owns a colour. Bars, ticks, and chips read from it.
+Each parent owns a colour **and an icon**, both editable in Settings. Bars,
+ticks, chips, and tiles read from them.
+
+A subcategory has neither of its own. Colour is inherited outright. The icon
+resolves: the sub's own name first — "Dental" gets a tooth, not Health's
+heartbeat — then the parent's, then a fallback tag. That order is why Rule 1
+costs nothing visually: two levels still give every row a distinct shape.
+
+Icons come from one catalogue in `src/icons.tsx`, keyed by stable strings
+(`"utensils"`, not a component). The key is what is stored on the category, so
+the library behind it can be replaced by editing that one file.
 
 ---
 

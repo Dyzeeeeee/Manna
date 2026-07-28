@@ -1,9 +1,9 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 
 import { Sheet } from "@ui/Sheet";
 
-import { CategoryDot } from "./Amount";
+import { CategoryIcon } from "./Amount";
+import { IconBack, IconForward } from "./icons";
 import {
   parentCategories,
   subcategoriesOf,
@@ -68,7 +68,7 @@ export function CategoryPicker({
             className="-ml-2 flex size-9 items-center justify-center rounded-control text-umber-700 transition-colors duration-150 hover:bg-clay-200 hover:text-umber-900"
             aria-label="Back to all categories"
           >
-            <ChevronLeft className="size-5" />
+            <IconBack className="size-5" />
           </button>
         )}
         <span className="ml-auto font-display font-semibold tabular-nums text-umber-700">
@@ -84,14 +84,21 @@ export function CategoryPicker({
             <PickRow
               onClick={() => pick(parent.id)}
               accent={parent.accent}
+              icon={parent.icon}
+              glyphName={parent.name}
               label={`Log to ${parent.name} only`}
               hint="sort it out later"
             />
+            {/* Subs show the shape their own name earns, falling back to the
+                parent's — so "Dental" gets a tooth under Health rather than a
+                column of identical family crests. */}
             {subs.map((sub) => (
               <PickRow
                 key={sub.id}
                 onClick={() => pick(sub.id)}
                 accent={parent.accent}
+                inherit={parent.icon}
+                glyphName={sub.name}
                 label={sub.name}
               />
             ))}
@@ -107,6 +114,8 @@ export function CategoryPicker({
               key={p.id}
               onClick={() => setParent(p)}
               accent={p.accent}
+              icon={p.icon}
+              glyphName={p.name}
               label={p.name}
               chevron
             />
@@ -120,12 +129,21 @@ export function CategoryPicker({
 function PickRow({
   onClick,
   accent,
+  icon,
+  inherit,
+  glyphName,
   label,
   hint,
   chevron = false,
 }: {
   onClick: () => void;
   accent: Accent | undefined;
+  icon?: string;
+  inherit?: string;
+  /** The category's real name, which is what the glyph is matched against —
+   *  separate from `label`, because the bare-parent row reads "Log to Food
+   *  only" and matching on that sentence would find nothing. */
+  glyphName?: string;
   label: string;
   hint?: string;
   chevron?: boolean;
@@ -134,14 +152,16 @@ function PickRow({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3 border-b border-sand-300/50 px-1 py-3.5 text-left transition-colors duration-150 last:border-b-0 hover:bg-clay-200"
+      className="flex w-full items-center gap-3 border-b border-sand-300/50 px-1 py-3 text-left transition-colors duration-150 last:border-b-0 hover:bg-clay-200"
     >
-      {accent && <CategoryDot accent={accent} />}
+      {accent && (
+        <CategoryIcon accent={accent} name={glyphName} icon={icon} inherit={inherit} />
+      )}
       <span className="min-w-0 flex-1 truncate">
         {label}
         {hint && <span className="text-umber-700"> — {hint}</span>}
       </span>
-      {chevron && <ChevronRight aria-hidden className="size-4 shrink-0 text-umber-700" />}
+      {chevron && <IconForward aria-hidden className="size-4 shrink-0 text-umber-700" />}
     </button>
   );
 }

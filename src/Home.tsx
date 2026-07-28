@@ -1,16 +1,25 @@
-import { ChevronRight, Plus, Settings as SettingsIcon } from "lucide-react";
-
 import { Button } from "@ui/Button";
 
-import { accentBg, Amount } from "./Amount";
+import { Amount, CategoryIcon } from "./Amount";
 import { captureConfigured } from "./capture";
 import { CaptureBox } from "./CaptureBox";
+import {
+  glyph,
+  IconAdd,
+  IconForward,
+  IconIn,
+  IconOut,
+  IconSettings,
+  NAV_GLYPHS,
+  type Icon,
+} from "./icons";
 import {
   accentOf,
   allotmentProgress,
   allotmentsRunningHot,
   findCategory,
   formatMoney,
+  glyphOf,
   isSameDay,
   monthlyHistory,
   monthSummary,
@@ -24,6 +33,12 @@ import {
   type Wallet,
 } from "./money";
 import { TxnList } from "./TxnList";
+
+const IconWallets = NAV_GLYPHS.wallets.line;
+const IconMonth = NAV_GLYPHS.month.line;
+const IconNet = glyph("scales").line;
+const IconAlert = glyph("clock").line;
+const IconToday = glyph("calendar").line;
 
 /** How far back the pace figure looks. Six points means this month measured
  *  against the five before it. */
@@ -93,12 +108,15 @@ export function Home({
             aria-label="Settings"
             className="flex size-11 shrink-0 items-center justify-center rounded-control text-umber-700 transition-colors duration-150 hover:bg-clay-200 hover:text-umber-900"
           >
-            <SettingsIcon className="size-5" />
+            <IconSettings className="size-5" />
           </button>
         </header>
 
         <div className="flex flex-col gap-1 rounded-tile bg-balance p-6 text-balance-ink shadow-soft">
-          <p className="font-display text-sm font-semibold text-balance-ink/60">Spendable now</p>
+          <p className="flex items-center gap-1.5 font-display text-sm font-semibold text-balance-ink/60">
+            <IconWallets aria-hidden className="size-4" />
+            Spendable now
+          </p>
           <Amount
             cents={spendable}
             className="font-display text-4xl font-semibold leading-none sm:text-5xl"
@@ -115,13 +133,14 @@ export function Home({
         {captureConfigured && <CaptureBox onCapture={onCapture} />}
 
         <section className="flex flex-col gap-2">
-          <h2 className="px-1 font-display text-sm font-semibold text-umber-700">
+          <h2 className="flex items-center gap-1.5 px-1 font-display text-sm font-semibold text-umber-700">
+            <IconMonth aria-hidden className="size-4" />
             {now.toLocaleString("en", { month: "long" })} so far
           </h2>
           <div className="grid grid-cols-3 gap-2">
-            <Stat label="In" cents={month.income} tone="in" />
-            <Stat label="Out" cents={month.expense} />
-            <Stat label="Net" cents={month.net} />
+            <Stat label="In" cents={month.income} icon={IconIn} tone="in" />
+            <Stat label="Out" cents={month.expense} icon={IconOut} />
+            <Stat label="Net" cents={month.net} icon={IconNet} />
           </div>
 
           {pace.hasHistory && (
@@ -143,51 +162,61 @@ export function Home({
             alarm, so it stays on Plan where it reads as progress. */}
         {hot.length > 0 && (
           <section className="flex flex-col gap-2">
-            <h2 className="px-1 font-display text-sm font-semibold text-umber-700">
+            <h2 className="flex items-center gap-1.5 px-1 font-display text-sm font-semibold text-umber-700">
+              <IconAlert aria-hidden className="size-4" />
               Needs attention
             </h2>
             <div className="overflow-hidden rounded-tile bg-clay-100 shadow-soft">
-              {hot.map((p, i) => (
-                <button
-                  key={p.allotment.id}
-                  type="button"
-                  onClick={() => onNavigate("plan")}
-                  className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors duration-150 hover:bg-clay-200 ${
-                    i === 0 ? "" : "border-t border-sand-300/50"
-                  }`}
-                >
-                  <span
-                    aria-hidden
-                    className={`h-6 w-1 shrink-0 rounded-control ${
-                      accentBg[accentOf(categories, p.allotment.categoryId)]
-                    }`}
-                  />
-                  <span className="min-w-0 flex-1 truncate text-sm">
-                    {findCategory(categories, p.allotment.categoryId)?.name ?? "Deleted category"}
-                  </span>
-                  <span
-                    className={`shrink-0 text-sm tabular-nums ${
-                      p.over ? "text-accent-rust" : "text-umber-700"
+              {hot.map((p, i) => {
+                const { own, inherited } = glyphOf(categories, p.allotment.categoryId);
+                const category = findCategory(categories, p.allotment.categoryId);
+                return (
+                  <button
+                    key={p.allotment.id}
+                    type="button"
+                    onClick={() => onNavigate("plan")}
+                    className={`flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors duration-150 hover:bg-clay-200 ${
+                      i === 0 ? "" : "border-t border-sand-300/50"
                     }`}
                   >
-                    {p.over
-                      ? `Over by ${formatMoney(-p.remainingCents)}`
-                      : `${formatMoney(p.remainingCents)} left`}
-                  </span>
-                </button>
-              ))}
+                    <CategoryIcon
+                      accent={accentOf(categories, p.allotment.categoryId)}
+                      name={category?.name}
+                      icon={own}
+                      inherit={inherited}
+                      className="size-8"
+                      glyphClassName="size-4"
+                    />
+                    <span className="min-w-0 flex-1 truncate text-sm">
+                      {category?.name ?? "Deleted category"}
+                    </span>
+                    <span
+                      className={`shrink-0 text-sm tabular-nums ${
+                        p.over ? "text-accent-rust" : "text-umber-700"
+                      }`}
+                    >
+                      {p.over
+                        ? `Over by ${formatMoney(-p.remainingCents)}`
+                        : `${formatMoney(p.remainingCents)} left`}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </section>
         )}
 
         <Button onClick={() => onAdd("expense")} className="hidden gap-2 lg:inline-flex">
-          <Plus className="size-4" />
+          <IconAdd className="size-4" />
           Log something
         </Button>
       </div>
 
       <section className="flex flex-col gap-3">
-        <h2 className="px-1 font-display text-sm font-semibold text-umber-700">Today</h2>
+        <h2 className="flex items-center gap-1.5 px-1 font-display text-sm font-semibold text-umber-700">
+          <IconToday aria-hidden className="size-4" />
+          Today
+        </h2>
 
         <TxnList
           txns={today}
@@ -205,7 +234,7 @@ export function Home({
             className="flex min-h-12 items-center justify-center gap-1 rounded-tile border border-sand-300/60 font-display text-sm font-semibold text-umber-700 transition-colors duration-150 hover:bg-clay-100 hover:text-umber-900"
           >
             See the whole month
-            <ChevronRight aria-hidden className="size-4" />
+            <IconForward aria-hidden className="size-4" />
           </button>
         )}
       </section>
@@ -213,10 +242,21 @@ export function Home({
   );
 }
 
-function Stat({ label, cents, tone }: { label: string; cents: number; tone?: "in" }) {
+function Stat({
+  label,
+  cents,
+  icon: Glyph,
+  tone,
+}: {
+  label: string;
+  cents: number;
+  icon: Icon;
+  tone?: "in";
+}) {
   return (
     <div className="rounded-tile bg-clay-100 px-3 py-3 text-center shadow-soft">
-      <p className="font-display text-xs font-semibold uppercase tracking-wider text-umber-700">
+      <p className="flex items-center justify-center gap-1 font-display text-xs font-semibold uppercase tracking-wider text-umber-700">
+        <Glyph aria-hidden className="size-3.5" />
         {label}
       </p>
       <Amount

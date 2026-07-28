@@ -1,12 +1,12 @@
-import { ChevronRight, Pencil, Plus } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 import { Button } from "@ui/Button";
 import { Input } from "@ui/Input";
 import { Sheet } from "@ui/Sheet";
 
-import { Amount } from "./Amount";
+import { Amount, WalletIcon } from "./Amount";
 import { BalanceCard } from "./BalanceCard";
+import { glyph, IconAdd, IconDelete, IconEdit, IconForward, IconIn, IconOut } from "./icons";
 import {
   owedTotals,
   parseAmount,
@@ -24,6 +24,10 @@ interface WalletsProps {
   debts: Debt[];
   onOwed: () => void;
 }
+
+/* Owed uses the same two arrows as money in and out, because that is exactly
+   what a debt is: an obligation that will one day move one way or the other. */
+const IconOwed = glyph("hand-coin").line;
 
 export function Wallets({ txns, wallets, debts, onOwed }: WalletsProps) {
   const [editing, setEditing] = useState<Wallet | "new" | null>(null);
@@ -50,18 +54,27 @@ export function Wallets({ txns, wallets, debts, onOwed }: WalletsProps) {
           className="overflow-hidden rounded-tile border border-sand-300/60 text-left transition-colors duration-150 hover:bg-clay-100"
         >
           <div className="flex items-center justify-between gap-3 border-b border-sand-300/50 px-5 py-3">
-            <span className="text-sm text-umber-700">You owe</span>
+            <span className="flex items-center gap-2 text-sm text-umber-700">
+              <IconOut aria-hidden className="size-4" />
+              You owe
+            </span>
             <Amount cents={oweCents} sign="none" className="font-display font-semibold text-accent-rust" />
           </div>
           <div className="flex items-center justify-between gap-3 border-b border-sand-300/50 px-5 py-3">
-            <span className="text-sm text-umber-700">Owed to you</span>
+            <span className="flex items-center gap-2 text-sm text-umber-700">
+              <IconIn aria-hidden className="size-4" />
+              Owed to you
+            </span>
             <Amount cents={owedCents} sign="none" className="font-display font-semibold text-sage-500" />
           </div>
           <div className="flex items-center justify-between gap-3 bg-clay-100 px-5 py-2.5 text-sm text-umber-700">
-            <span>Money borrowed and lent</span>
+            <span className="flex items-center gap-2">
+              <IconOwed aria-hidden className="size-4" />
+              Money borrowed and lent
+            </span>
             <span className="flex items-center gap-0.5">
               Open
-              <ChevronRight aria-hidden className="size-4" />
+              <IconForward aria-hidden className="size-4" />
             </span>
           </div>
         </button>
@@ -80,6 +93,10 @@ export function Wallets({ txns, wallets, debts, onOwed }: WalletsProps) {
                 i === 0 ? "" : "border-t border-sand-300/50"
               }`}
             >
+              {/* GCash and Cash are not the same thing — the glyph is guessed
+                  from the name so the column can be read down rather than
+                  scanned word by word. */}
+              <WalletIcon name={wallet.name} className="size-5 text-umber-700" />
               <span className="min-w-0 flex-1 truncate">{wallet.name}</span>
               <Amount cents={balances.get(wallet.id) ?? 0} className="font-display font-semibold" />
               <button
@@ -87,7 +104,7 @@ export function Wallets({ txns, wallets, debts, onOwed }: WalletsProps) {
                 onClick={() => setEditing(wallet)}
                 className="-mr-2 flex size-11 shrink-0 items-center justify-center rounded-control text-umber-700 transition-colors duration-150 hover:bg-clay-200 hover:text-umber-900"
               >
-                <Pencil className="size-4" />
+                <IconEdit className="size-4" />
               </button>
             </div>
           ))}
@@ -95,7 +112,7 @@ export function Wallets({ txns, wallets, debts, onOwed }: WalletsProps) {
 
         <div className="flex justify-center">
           <Button variant="ghost" onClick={() => setEditing("new")} className="gap-2">
-            <Plus className="size-4" />
+            <IconAdd className="size-4" />
             Add wallet
           </Button>
         </div>
@@ -167,7 +184,8 @@ function WalletForm({ wallet, onClose }: { wallet: Wallet | null; onClose: () =>
 
       <div className="flex items-center justify-between gap-3">
         {wallet ? (
-          <Button variant="ghost" onClick={() => void destroy()} className="px-4">
+          <Button variant="ghost" onClick={() => void destroy()} className="gap-1.5 px-4">
+            <IconDelete className="size-4" />
             Delete
           </Button>
         ) : (

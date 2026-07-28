@@ -1,17 +1,29 @@
-import { ChevronLeft, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@ui/Button";
 import { Input } from "@ui/Input";
 import { Select } from "@ui/Select";
 
-import { CategoryDot, CategoryIcon } from "./Amount";
+import { CategoryIcon, WalletIcon } from "./Amount";
 import { CategoryPicker } from "./CategoryPicker";
+import {
+  glyph,
+  IconApprove,
+  IconBack,
+  IconBrowse,
+  IconClose,
+  IconForward,
+  IconIn,
+  IconOut,
+  IconTransfer,
+  type Icon,
+} from "./icons";
 import {
   centsToEntry,
   findCategory,
   formatEntry,
   formatMoney,
+  glyphOf,
   parentOf,
   parseAmount,
   pressKey,
@@ -27,11 +39,22 @@ import { addTxn, lastWalletId } from "./store";
 
 export type { AddDraft };
 
-const kinds: { value: TxnKind; label: string }[] = [
-  { value: "expense", label: "Spent" },
-  { value: "income", label: "Received" },
-  { value: "transfer", label: "Moved" },
+/* The kind toggle carries a glyph as well as a word. Three labels in a row are
+   easy to misread at speed — "Spent" and "Received" are the same shape and
+   length at a glance — where an arrow leaving, an arrow arriving and a pair
+   swapping are told apart without reading anything. */
+const kinds: { value: TxnKind; label: string; icon: Icon }[] = [
+  { value: "expense", label: "Spent", icon: IconOut },
+  { value: "income", label: "Received", icon: IconIn },
+  { value: "transfer", label: "Moved", icon: IconTransfer },
 ];
+
+/* Icons for the review panel's rows, so each line is identifiable before it is
+   read — the point of the panel is to be scanned, not studied. */
+const IconAmount = glyph("coins").line;
+const IconNote = glyph("quill").line;
+const IconWallet = glyph("wallet").line;
+const IconCategory = glyph("tag").line;
 
 /** Six fits two columns without scrolling on the shortest phone, and past six
  *  the list stops being "the ones I always use" and becomes browsing — which is
@@ -230,7 +253,9 @@ function AddComposer({
   }
 
   const picks = transfer ? [] : topCategories(txns, categories, kind, QUICK_PICKS);
-  const kindLabel = kinds.find((k) => k.value === kind)?.label ?? "";
+  const chosenKind = kinds.find((k) => k.value === kind);
+  const kindLabel = chosenKind?.label ?? "";
+  const KindIcon = chosenKind?.icon ?? IconOut;
   const walletName = (id: string) => wallets.find((w) => w.id === id)?.name ?? "—";
 
   return (
@@ -247,7 +272,7 @@ function AddComposer({
           aria-label={step === 0 ? "Close" : "Back"}
           className="flex size-11 items-center justify-center rounded-control text-umber-700 transition-colors duration-150 hover:bg-clay-200 hover:text-umber-900"
         >
-          {step === 0 ? <X className="size-5" /> : <ChevronLeft className="size-5" />}
+          {step === 0 ? <IconClose className="size-5" /> : <IconBack className="size-5" />}
         </button>
 
         <Progress total={flow.length} current={step} />
@@ -273,6 +298,9 @@ function AddComposer({
         {current === "category" && (
           <section>
             <Heading>What was it for?</Heading>
+            {/* Icon first and large: this is the panel the five-second bar is
+                won or lost on, and a tinted shape is recognised in peripheral
+                vision while a word still has to be read. */}
             <div className="grid grid-cols-2 gap-2 pt-1">
               {picks.map((pick) => (
                 <button
@@ -280,21 +308,26 @@ function AddComposer({
                   type="button"
                   onClick={() => chooseCategory(pick.categoryId)}
                   aria-pressed={categoryId === pick.categoryId}
-                  className={`flex min-h-12 items-center gap-2.5 rounded-tile px-3.5 text-left shadow-soft transition duration-150 active:brightness-95 ${
+                  className={`flex min-h-14 items-center gap-3 rounded-tile px-3 text-left shadow-soft transition duration-150 active:brightness-95 ${
                     categoryId === pick.categoryId
                       ? "bg-sage-500/15 ring-1 ring-sage-500"
                       : "bg-clay-100 hover:bg-clay-200"
                   }`}
                 >
-                  <CategoryDot accent={pick.accent} />
+                  <CategoryIcon
+                    accent={pick.accent}
+                    name={pick.name}
+                    inherit={pick.inheritIcon}
+                  />
                   <span className="min-w-0 flex-1 truncate text-sm">{pick.name}</span>
                 </button>
               ))}
               <button
                 type="button"
                 onClick={() => setPicking(true)}
-                className="col-span-2 min-h-12 rounded-tile border border-dashed border-sand-300 font-display text-sm font-semibold text-umber-700 transition-colors duration-150 hover:bg-clay-100 hover:text-umber-900"
+                className="col-span-2 flex min-h-12 items-center justify-center gap-2 rounded-tile border border-dashed border-sand-300 font-display text-sm font-semibold text-umber-700 transition-colors duration-150 hover:bg-clay-100 hover:text-umber-900"
               >
+                <IconBrowse aria-hidden className="size-4" />
                 All categories…
               </button>
             </div>
@@ -304,30 +337,40 @@ function AddComposer({
         {current === "route" && (
           <section className="flex flex-col gap-2">
             <Heading>Move between your wallets</Heading>
-            <Select
-              value={walletId}
-              onChange={(e) => setWalletId(e.target.value)}
-              aria-label="From wallet"
-            >
-              <option value="">From…</option>
-              {wallets.map((w) => (
-                <option key={w.id} value={w.id}>
-                  {w.name}
-                </option>
-              ))}
-            </Select>
-            <Select
-              value={toWalletId}
-              onChange={(e) => setToWalletId(e.target.value)}
-              aria-label="To wallet"
-            >
-              <option value="">To…</option>
-              {wallets.map((w) => (
-                <option key={w.id} value={w.id}>
-                  {w.name}
-                </option>
-              ))}
-            </Select>
+            {/* The wallet's own glyph sits beside each picker and follows the
+                selection, so the route reads as a picture before the two names
+                are compared. */}
+            <Field icon={<WalletIcon name={walletName(walletId)} />}>
+              <Select
+                value={walletId}
+                onChange={(e) => setWalletId(e.target.value)}
+                aria-label="From wallet"
+              >
+                <option value="">From…</option>
+                {wallets.map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <div className="flex justify-center py-0.5 text-umber-700">
+              <IconTransfer aria-hidden className="size-4 rotate-90" />
+            </div>
+            <Field icon={<WalletIcon name={walletName(toWalletId)} />}>
+              <Select
+                value={toWalletId}
+                onChange={(e) => setToWalletId(e.target.value)}
+                aria-label="To wallet"
+              >
+                <option value="">To…</option>
+                {wallets.map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
             {sameWallet && (
               <p className="text-sm text-umber-700">A transfer needs two different wallets.</p>
             )}
@@ -340,46 +383,55 @@ function AddComposer({
         {current === "details" && (
           <section className="flex flex-col gap-2">
             <Heading>Wallet &amp; note</Heading>
-            <Select
-              value={walletId}
-              onChange={(e) => setWalletId(e.target.value)}
-              aria-label="Wallet"
-            >
-              {wallets.map((w) => (
-                <option key={w.id} value={w.id}>
-                  {w.name}
-                </option>
-              ))}
-            </Select>
-            <Input
-              placeholder="Note — merchant, detail (optional)"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") e.currentTarget.blur();
-              }}
-              aria-label="Note"
-              maxLength={60}
-              className="mt-1"
-            />
+            <Field icon={<WalletIcon name={walletName(walletId)} />}>
+              <Select
+                value={walletId}
+                onChange={(e) => setWalletId(e.target.value)}
+                aria-label="Wallet"
+              >
+                {wallets.map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field icon={<IconNote aria-hidden className="size-5" />} className="mt-1">
+              <Input
+                placeholder="Note — merchant, detail (optional)"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") e.currentTarget.blur();
+                }}
+                aria-label="Note"
+                maxLength={60}
+              />
+            </Field>
           </section>
         )}
 
         {current === "note" && (
           <section className="flex flex-col gap-2">
             <Heading>Add a note?</Heading>
-            <Input
-              placeholder="Note — reason for the move (optional)"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") e.currentTarget.blur();
-              }}
-              aria-label="Note"
-              maxLength={60}
-            />
-            <p className="pt-1 text-sm text-umber-700">
-              {walletName(walletId)} → {walletName(toWalletId)}
+            <Field icon={<IconNote aria-hidden className="size-5" />}>
+              <Input
+                placeholder="Note — reason for the move (optional)"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") e.currentTarget.blur();
+                }}
+                aria-label="Note"
+                maxLength={60}
+              />
+            </Field>
+            <p className="flex items-center gap-2 pt-1 text-sm text-umber-700">
+              <WalletIcon name={walletName(walletId)} className="size-4" />
+              {walletName(walletId)}
+              <IconTransfer aria-hidden className="size-3.5" />
+              <WalletIcon name={walletName(toWalletId)} className="size-4" />
+              {walletName(toWalletId)}
             </p>
           </section>
         )}
@@ -388,15 +440,18 @@ function AddComposer({
           <section>
             <Heading>Ready to log</Heading>
             <div className="mt-1 overflow-hidden rounded-tile bg-clay-100 shadow-soft">
-              <ReviewRow label="Amount" onEdit={() => setStep(0)}>
+              <ReviewRow icon={IconAmount} label="Amount" onEdit={() => setStep(0)}>
                 <span className="font-display font-semibold tabular-nums text-umber-900">
                   {amountCents !== null ? formatMoney(amountCents) : "—"}
                 </span>
-                <span className="ml-2 text-sm text-umber-700">{kindLabel}</span>
+                <span className="ml-2 flex items-center gap-1 text-sm text-umber-700">
+                  <KindIcon aria-hidden className="size-3.5" />
+                  {kindLabel}
+                </span>
               </ReviewRow>
 
               {transfer ? (
-                <ReviewRow label="Route" onEdit={() => setStep(1)}>
+                <ReviewRow icon={IconTransfer} label="Route" onEdit={() => setStep(1)}>
                   <span className="flex items-center gap-2">
                     <CategoryIcon accent="slate" transfer />
                     <span className="truncate">
@@ -406,16 +461,19 @@ function AddComposer({
                 </ReviewRow>
               ) : (
                 <>
-                  <ReviewRow label="Category" onEdit={() => setStep(1)}>
+                  <ReviewRow icon={IconCategory} label="Category" onEdit={() => setStep(1)}>
                     <CategorySummary categories={categories} categoryId={categoryId} />
                   </ReviewRow>
-                  <ReviewRow label="Wallet" onEdit={() => setStep(2)}>
-                    {walletName(walletId)}
+                  <ReviewRow icon={IconWallet} label="Wallet" onEdit={() => setStep(2)}>
+                    <span className="flex items-center gap-2">
+                      <WalletIcon name={walletName(walletId)} className="size-4" />
+                      {walletName(walletId)}
+                    </span>
                   </ReviewRow>
                 </>
               )}
 
-              <ReviewRow label="Note" onEdit={() => setStep(2)}>
+              <ReviewRow icon={IconNote} label="Note" onEdit={() => setStep(2)}>
                 {note.trim() ? (
                   note.trim()
                 ) : (
@@ -430,18 +488,25 @@ function AddComposer({
       <footer className="border-t border-sand-300/50 bg-clay-100 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
         {current === "amount" ? (
           <>
-            <Button onClick={goNext} disabled={!canAdvance} className="mb-2 w-full">
+            <Button onClick={goNext} disabled={!canAdvance} className="mb-2 w-full gap-1.5">
               Next
+              <IconForward aria-hidden className="size-4" />
             </Button>
             <Numpad onPress={type} />
           </>
         ) : current === "review" ? (
-          <Button onClick={() => void save()} disabled={busy} className="w-full tabular-nums">
+          <Button
+            onClick={() => void save()}
+            disabled={busy}
+            className="w-full gap-2 tabular-nums"
+          >
+            <IconApprove aria-hidden className="size-4" />
             {busy ? "Saving…" : `Log ${amountCents !== null ? formatMoney(amountCents) : ""}`.trim()}
           </Button>
         ) : (
-          <Button onClick={goNext} disabled={!canAdvance} className="w-full">
+          <Button onClick={goNext} disabled={!canAdvance} className="w-full gap-1.5">
             Next
+            <IconForward aria-hidden className="size-4" />
           </Button>
         )}
       </footer>
@@ -490,26 +555,55 @@ function AmountPanel({
             type="button"
             onClick={() => onKind(k.value)}
             aria-pressed={kind === k.value}
-            className={`min-h-11 flex-1 rounded-control font-display text-sm font-semibold transition-colors duration-150 ${
+            className={`flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-control font-display text-sm font-semibold transition-colors duration-150 ${
               kind === k.value ? "bg-raised text-umber-900 shadow-soft" : "text-umber-700"
             }`}
           >
+            <k.icon aria-hidden className="size-4" />
             {k.label}
           </button>
         ))}
       </div>
 
-      <Input
-        placeholder="Note — merchant, detail (optional)"
-        value={note}
-        onChange={(e) => onNote(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") e.currentTarget.blur();
-        }}
-        aria-label="Note"
-        maxLength={60}
-        className="text-center"
-      />
+      <Field icon={<IconNote aria-hidden className="size-5" />}>
+        <Input
+          placeholder="Note — merchant, detail (optional)"
+          value={note}
+          onChange={(e) => onNote(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") e.currentTarget.blur();
+          }}
+          aria-label="Note"
+          maxLength={60}
+        />
+      </Field>
+    </div>
+  );
+}
+
+/** A control with a glyph pinned inside its left edge. The design system's Input
+ *  and Select are plain boxes on purpose, so rather than forking them the icon
+ *  is overlaid and the box padded to clear it — which keeps every field on this
+ *  sheet identifiable at a glance without touching Tiswell's components. */
+function Field({
+  icon,
+  className = "",
+  children,
+}: {
+  icon: React.ReactNode;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={`relative ${className}`}>
+      <span
+        aria-hidden
+        className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-umber-700"
+      >
+        {icon}
+      </span>
+      {/* the child is the real control; padding-left clears the glyph */}
+      <div className="[&_input]:pl-12 [&_select]:pl-12">{children}</div>
     </div>
   );
 }
@@ -539,10 +633,12 @@ function Progress({ total, current }: { total: number; current: number }) {
 /** One line on the review panel, tappable to jump straight back to the step
  *  that set it — the fastest way to fix a wrong wallet or amount. */
 function ReviewRow({
+  icon: Glyph,
   label,
   onEdit,
   children,
 }: {
+  icon: Icon;
   label: string;
   onEdit: () => void;
   children: React.ReactNode;
@@ -553,7 +649,8 @@ function ReviewRow({
       onClick={onEdit}
       className="flex w-full items-center gap-3 border-b border-sand-300/50 px-4 py-3.5 text-left transition-colors duration-150 last:border-b-0 hover:bg-clay-200"
     >
-      <span className="w-20 shrink-0 font-display text-xs font-semibold uppercase tracking-wider text-umber-700">
+      <span className="flex w-24 shrink-0 items-center gap-2 font-display text-xs font-semibold uppercase tracking-wider text-umber-700">
+        <Glyph aria-hidden className="size-4" />
         {label}
       </span>
       <span className="flex min-w-0 flex-1 items-center truncate">{children}</span>
@@ -573,13 +670,17 @@ function CategorySummary({
 }) {
   const category = findCategory(categories, categoryId);
   const parent = parentOf(categories, categoryId);
+  const { own, inherited } = glyphOf(categories, categoryId);
   const parentName = parent && parent.id !== category?.id ? parent.name : undefined;
   return (
     <span className="flex items-center gap-2">
       <CategoryIcon
         accent={parent?.accent ?? "slate"}
         name={category?.name}
+        icon={own}
+        inherit={inherited}
         className="size-8"
+        glyphClassName="size-4"
       />
       <span className="min-w-0 truncate">
         {category?.name ?? "Uncategorised"}

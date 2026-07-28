@@ -1,16 +1,26 @@
-import { ChevronRight, Plus } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@ui/Button";
 import { Input } from "@ui/Input";
 
-import { accentBg, Amount } from "./Amount";
+import { accentBg, Amount, CategoryIcon } from "./Amount";
+import {
+  glyph,
+  IconAdd,
+  IconApprove,
+  IconClose,
+  IconForward,
+  IconSettings,
+  IconSkip,
+  type Icon,
+} from "./icons";
 import {
   accentOf,
   allotmentProgress,
   daysOnList,
   findCategory,
   formatMoney,
+  glyphOf,
   monthKey,
   monthLabel,
   parseAmount,
@@ -46,13 +56,29 @@ interface PlanProps {
   onLogged: (id: string) => void;
 }
 
+/* Three tabs, each with the shape of what it holds: things that come round every
+   month, a set of limits, and a list of things being weighed. */
 const TABS = [
-  { value: "expected", label: "Expected" },
-  { value: "allotments", label: "Allotments" },
-  { value: "considering", label: "Considering" },
+  { value: "expected", label: "Expected", icon: glyph("calendar").line },
+  { value: "allotments", label: "Allotments", icon: glyph("scales").line },
+  { value: "considering", label: "Considering", icon: glyph("clock").line },
 ] as const;
 
 type Tab = (typeof TABS)[number]["value"];
+
+/** A ceiling is a limit you stay under; a floor is one you rise to. Giving is
+ *  the only floor, and it is the one place in the app where a full bar is the
+ *  good outcome — the arrow says which way is right without a legend. */
+const IconCeiling: Icon = glyph("scales").line;
+const IconFloor: Icon = glyph("hand-heart").line;
+
+/** How long something has been weighed. The whole argument of the Considering
+ *  list is that time spent deciding is information, so it gets a clock. */
+const IconWaiting: Icon = glyph("clock").line;
+
+/** Deciding against something is a real outcome, not a deletion — but it does
+ *  remove the row, so it takes the dismiss glyph rather than the bin. */
+const IconLetGo: Icon = IconClose;
 
 /** Plan shows status. Settings holds the rules.
  *
@@ -107,6 +133,7 @@ export function Plan({
                   : "bg-clay-100 text-umber-700 hover:bg-clay-200 hover:text-umber-900"
               }`}
             >
+              <t.icon aria-hidden className="size-4" />
               {t.label}
               {count > 0 && (
                 <span
@@ -203,7 +230,7 @@ function Expected({
             onClick={() => setShowSettled(!showSettled)}
             className="flex items-center gap-2 border-t border-sand-300/50 py-3 text-left font-display text-sm font-semibold text-umber-700"
           >
-            <ChevronRight
+            <IconForward
               aria-hidden
               className={`size-4 transition-transform duration-200 ${showSettled ? "rotate-90" : ""}`}
             />
@@ -215,44 +242,64 @@ function Expected({
 
           {showSettled && (
             <div className="overflow-hidden rounded-tile bg-clay-100 shadow-soft">
-              {settled.map((status, i) => (
-                <div
-                  key={status.recurring.id}
-                  className={`flex items-center gap-3 px-5 py-3 ${
-                    i === 0 ? "" : "border-t border-sand-300/50"
-                  }`}
-                >
-                  <span
-                    aria-hidden
-                    className={`h-8 w-1 shrink-0 rounded-control ${
-                      accentBg[accentOf(categories, status.recurring.categoryId)]
+              {settled.map((status, i) => {
+                const { own, inherited } = glyphOf(categories, status.recurring.categoryId);
+                const skipped = status.state === "skipped";
+                return (
+                  <div
+                    key={status.recurring.id}
+                    className={`flex items-center gap-3 px-5 py-2.5 ${
+                      i === 0 ? "" : "border-t border-sand-300/50"
                     }`}
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate">{status.recurring.name}</span>
-                    <span className="block truncate text-sm text-umber-700">
-                      {status.state === "skipped"
-                        ? "Skipped this month"
-                        : status.due.toLocaleDateString("en", { day: "numeric", month: "long" })}
-                    </span>
-                  </span>
-                  {status.state === "skipped" ? (
-                    <button
-                      type="button"
-                      onClick={() => void unskipRecurring(status.recurring.id, key)}
-                      className="shrink-0 rounded-control px-3 py-1.5 font-display text-xs font-semibold text-umber-700 transition-colors duration-150 hover:bg-clay-200 hover:text-umber-900"
-                    >
-                      Undo skip
-                    </button>
-                  ) : (
-                    <Amount
-                      cents={status.txn?.amountCents ?? 0}
-                      sign="none"
-                      className="shrink-0 text-umber-700"
+                  >
+                    <CategoryIcon
+                      accent={accentOf(categories, status.recurring.categoryId)}
+                      name={
+                        findCategory(categories, status.recurring.categoryId)?.name ??
+                        status.recurring.name
+                      }
+                      icon={own}
+                      inherit={inherited}
+                      className={`size-8 ${skipped ? "opacity-50" : ""}`}
+                      glyphClassName="size-4"
                     />
-                  )}
-                </div>
-              ))}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate">{status.recurring.name}</span>
+                      <span className="flex items-center gap-1 truncate text-sm text-umber-700">
+                        {skipped ? (
+                          <>
+                            <IconSkip aria-hidden className="size-3.5" />
+                            Skipped this month
+                          </>
+                        ) : (
+                          <>
+                            <IconApprove aria-hidden className="size-3.5 text-sage-500" />
+                            {status.due.toLocaleDateString("en", {
+                              day: "numeric",
+                              month: "long",
+                            })}
+                          </>
+                        )}
+                      </span>
+                    </span>
+                    {skipped ? (
+                      <button
+                        type="button"
+                        onClick={() => void unskipRecurring(status.recurring.id, key)}
+                        className="shrink-0 rounded-control px-3 py-1.5 font-display text-xs font-semibold text-umber-700 transition-colors duration-150 hover:bg-clay-200 hover:text-umber-900"
+                      >
+                        Undo skip
+                      </button>
+                    ) : (
+                      <Amount
+                        cents={status.txn?.amountCents ?? 0}
+                        sign="none"
+                        className="shrink-0 text-umber-700"
+                      />
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -308,11 +355,11 @@ function ExpectedCard({
   return (
     <div className="flex flex-col gap-4 rounded-tile bg-clay-100 p-4 shadow-soft">
       <div className="flex items-start gap-3">
-        <span
-          aria-hidden
-          className={`h-9 w-1 shrink-0 rounded-control ${
-            accentBg[accentOf(categories, recurring.categoryId)]
-          }`}
+        <CategoryIcon
+          accent={accentOf(categories, recurring.categoryId)}
+          name={category?.name ?? recurring.name}
+          icon={glyphOf(categories, recurring.categoryId).own}
+          inherit={glyphOf(categories, recurring.categoryId).inherited}
         />
         <div className="min-w-0 flex-1">
           <p className="truncate font-display font-semibold">{recurring.name}</p>
@@ -339,15 +386,17 @@ function ExpectedCard({
         <Button
           onClick={() => void approve()}
           disabled={amountCents === null || busy}
-          className="flex-1"
+          className="flex-1 gap-2"
         >
+          <IconApprove aria-hidden className="size-4" />
           {busy ? "Logging…" : "Approve & log"}
         </Button>
         <Button
           variant="ghost"
           onClick={() => void skipRecurring(recurring.id, key)}
-          className="px-5"
+          className="gap-1.5 px-5"
         >
+          <IconSkip aria-hidden className="size-4" />
           Skip
         </Button>
       </div>
@@ -406,10 +455,11 @@ function Allotments({
       <button
         type="button"
         onClick={onSettings}
-        className="flex min-h-12 items-center justify-center gap-1 rounded-tile border border-dashed border-sand-300 font-display text-sm font-semibold text-umber-700 transition-colors duration-150 hover:bg-clay-100 hover:text-umber-900"
+        className="flex min-h-12 items-center justify-center gap-1.5 rounded-tile border border-dashed border-sand-300 font-display text-sm font-semibold text-umber-700 transition-colors duration-150 hover:bg-clay-100 hover:text-umber-900"
       >
+        <IconSettings aria-hidden className="size-4" />
         Change these in Settings
-        <ChevronRight aria-hidden className="size-4" />
+        <IconForward aria-hidden className="size-4" />
       </button>
     </div>
   );
@@ -425,6 +475,8 @@ function Track({
   const { allotment, spentCents, pct, over, met, remainingCents } = progress;
   const name = findCategory(categories, allotment.categoryId)?.name ?? "Deleted category";
   const accent = accentOf(categories, allotment.categoryId);
+  const { own, inherited } = glyphOf(categories, allotment.categoryId);
+  const KindIcon = allotment.kind === "floor" ? IconFloor : IconCeiling;
 
   const foot = over
     ? `Over by ${formatMoney(-remainingCents)}`
@@ -436,7 +488,15 @@ function Track({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-baseline gap-2">
+      <div className="flex items-center gap-2.5">
+        <CategoryIcon
+          accent={accent}
+          name={name}
+          icon={own}
+          inherit={inherited}
+          className="size-8"
+          glyphClassName="size-4"
+        />
         <span className="min-w-0 flex-1 truncate font-display font-semibold">{name}</span>
         <span className="shrink-0 text-xs tabular-nums text-umber-700">{pct}%</span>
         <span className="shrink-0 text-sm tabular-nums text-umber-700">
@@ -455,10 +515,11 @@ function Track({
       </div>
 
       <p
-        className={`text-xs ${
+        className={`flex items-center gap-1.5 text-xs ${
           over ? "text-accent-rust" : met ? "text-sage-500" : "text-umber-700"
         }`}
       >
+        <KindIcon aria-hidden className="size-3.5 shrink-0" />
         {foot}
       </p>
     </div>
@@ -510,7 +571,7 @@ function ConsideringList({
         <ConsideringForm categories={categories} onDone={() => setAdding(false)} />
       ) : (
         <Button variant="ghost" onClick={() => setAdding(true)} className="gap-2 self-center">
-          <Plus className="size-4" />
+          <IconAdd className="size-4" />
           Add something you are considering
         </Button>
       )}
@@ -562,15 +623,20 @@ function ConsideringCard({
   return (
     <div className="flex flex-col gap-3 rounded-tile bg-clay-100 p-4 shadow-soft">
       <div className="flex items-start gap-3">
-        <span
-          aria-hidden
-          className={`h-9 w-1 shrink-0 rounded-control ${
-            accentBg[accentOf(categories, item.categoryId)]
-          }`}
+        <CategoryIcon
+          accent={accentOf(categories, item.categoryId)}
+          name={category?.name ?? item.name}
+          icon={glyphOf(categories, item.categoryId).own}
+          inherit={glyphOf(categories, item.categoryId).inherited}
         />
         <div className="min-w-0 flex-1">
           <p className="truncate font-display font-semibold">{item.name}</p>
-          <p className={`truncate text-sm ${days >= 30 ? "text-sage-500" : "text-umber-700"}`}>
+          <p
+            className={`flex items-center gap-1.5 truncate text-sm ${
+              days >= 30 ? "text-sage-500" : "text-umber-700"
+            }`}
+          >
+            <IconWaiting aria-hidden className="size-3.5 shrink-0" />
             {category ? `${category.name} · ` : ""}
             {days === 0 ? "Added today" : `On the list ${days} ${days === 1 ? "day" : "days"}`}
           </p>
@@ -586,10 +652,21 @@ function ConsideringCard({
       )}
 
       <div className="flex gap-2">
-        <Button onClick={() => void buy()} disabled={busy} variant="ghost" className="flex-1 border border-sand-300">
+        <Button
+          onClick={() => void buy()}
+          disabled={busy}
+          variant="ghost"
+          className="flex-1 gap-2 border border-sand-300"
+        >
+          <IconApprove aria-hidden className="size-4" />
           {busy ? "Logging…" : `Buy it — log ${formatMoney(item.amountCents)}`}
         </Button>
-        <Button variant="ghost" onClick={() => void removeConsidering(item.id)} className="px-5">
+        <Button
+          variant="ghost"
+          onClick={() => void removeConsidering(item.id)}
+          className="gap-1.5 px-5"
+        >
+          <IconLetGo aria-hidden className="size-4" />
           Let go
         </Button>
       </div>

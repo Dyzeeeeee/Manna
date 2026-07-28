@@ -1,5 +1,6 @@
 /// <reference types="vitest/config" />
-import { existsSync } from "node:fs";
+import { execSync } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath, URL } from "node:url";
 
 import tailwindcss from "@tailwindcss/vite";
@@ -8,6 +9,31 @@ import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
 const here = (p: string) => fileURLToPath(new URL(p, import.meta.url));
+
+/* ── Build stamp ───────────────────────────────────────────────────────────
+   Baked in at compile time and shown in Settings. This exists because the
+   service worker registers as `autoUpdate`: a stale build is served silently
+   and looks exactly like a fresh one, so without a visible stamp there is no
+   way to tell whether an update actually landed. Version alone can't answer
+   that — it only moves when someone remembers to bump it — which is why the
+   commit and the build time are here too. */
+
+const pkg = JSON.parse(readFileSync(here("package.json"), "utf8")) as { version: string };
+
+/** The commit being built. Falls back to the CI-provided sha, then to nothing:
+ *  a deploy host may build from a tarball with no .git at all, and a missing
+ *  stamp must never fail the build. */
+function commit(): string {
+  const fromCI = process.env.CF_PAGES_COMMIT_SHA ?? process.env.GITHUB_SHA;
+  if (fromCI) return fromCI.slice(0, 7);
+  try {
+    return execSync("git rev-parse --short HEAD", { stdio: ["ignore", "pipe", "ignore"] })
+      .toString()
+      .trim();
+  } catch {
+    return "";
+  }
+}
 
 /* Where Tiswell's source is found, in two situations:
    - working locally, it's the sibling folder you actually edit
@@ -23,6 +49,11 @@ const TISWELL = existsSync(here("../TisWell/src")) ? here("../TisWell") : here("
    as source, and because that data layer now talks to a shared Instant app
    rather than per-origin browser storage, both reach the same database. */
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+    __APP_COMMIT__: JSON.stringify(commit()),
+    __APP_BUILT_AT__: JSON.stringify(new Date().toISOString()),
+  },
   plugins: [
     react(),
     tailwindcss(),
@@ -85,7 +116,18 @@ export default defineConfig({
     // dedupe pins everything to one copy so hooks don't break. @instantdb/react
     // especially: a second copy would mean a second client, and the session
     // handed down from Tiswell would land in the wrong one.
-    dedupe: ["react", "react-dom", "lucide-react", "@instantdb/react", "dexie"],
+    //
+    // lucide-react stays in the list although Manna's own source no longer
+    // imports it: the borrowed @ui components still do, and they compile as
+    // part of this build.
+    dedupe: [
+      "react",
+      "react-dom",
+      "@remixicon/react",
+      "lucide-react",
+      "@instantdb/react",
+      "dexie",
+    ],
   },
   server: {
     // bind all interfaces so a phone on the same wifi can reach the dev server

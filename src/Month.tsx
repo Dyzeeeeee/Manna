@@ -1,13 +1,21 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 
-import { accentBg, Amount, CategoryDot } from "./Amount";
+import { accentBg, Amount, CategoryIcon } from "./Amount";
 import { FilterChips } from "./FilterChips";
+import {
+  glyph,
+  IconBack,
+  IconForward,
+  IconIn,
+  IconOut,
+  type Icon,
+} from "./icons";
 import {
   accentOf,
   filterByKind,
   findCategory,
   formatMoney,
+  glyphOf,
   monthKey,
   monthLabel,
   monthlyHistory,
@@ -26,6 +34,10 @@ import {
 import { TxnList } from "./TxnList";
 
 const HISTORY_MONTHS = 6;
+
+const IconNet = glyph("scales").line;
+const IconHistory = glyph("chart").line;
+const IconWhereItWent = glyph("pie").line;
 
 interface MonthProps {
   txns: Txn[];
@@ -67,7 +79,7 @@ export function Month({ txns, categories, wallets, onSelect }: MonthProps) {
             disabled={key <= oldest}
             onClick={() => setKey(shiftMonth(key, -1))}
           >
-            <ChevronLeft className="size-5" />
+            <IconBack className="size-5" />
           </ArrowButton>
           <h2 className="font-display text-lg font-semibold">{monthLabel(key)}</h2>
           <ArrowButton
@@ -75,19 +87,22 @@ export function Month({ txns, categories, wallets, onSelect }: MonthProps) {
             disabled={key >= newest}
             onClick={() => setKey(shiftMonth(key, 1))}
           >
-            <ChevronRight className="size-5" />
+            <IconForward className="size-5" />
           </ArrowButton>
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <Total label="In" cents={summary.income} tone="in" />
-          <Total label="Out" cents={summary.expense} />
-          <Total label="Net" cents={summary.net} wide />
+          <Total label="In" cents={summary.income} icon={IconIn} tone="in" />
+          <Total label="Out" cents={summary.expense} icon={IconOut} />
+          <Total label="Net" cents={summary.net} icon={IconNet} wide />
         </div>
 
         <section className="flex flex-col gap-3 rounded-tile bg-clay-100 p-4 shadow-soft">
           <div className="flex items-baseline justify-between gap-2">
-            <h3 className="font-display text-sm font-semibold text-umber-700">Last six months</h3>
+            <h3 className="flex items-center gap-1.5 font-display text-sm font-semibold text-umber-700">
+              <IconHistory aria-hidden className="size-4" />
+              Last six months
+            </h3>
             <div className="flex gap-3 text-xs text-umber-700">
               <Key swatch="bg-sage-500" label="In" />
               <Key swatch="bg-accent-gold" label="Out" />
@@ -112,43 +127,54 @@ export function Month({ txns, categories, wallets, onSelect }: MonthProps) {
 
         {breakdown.length > 0 && (
           <section className="flex flex-col gap-1 rounded-tile bg-clay-100 p-5 shadow-soft">
-            <h3 className="pb-1 font-display text-sm font-semibold text-umber-700">
+            <h3 className="flex items-center gap-1.5 pb-1 font-display text-sm font-semibold text-umber-700">
+              <IconWhereItWent aria-hidden className="size-4" />
               Where it went
             </h3>
-            {breakdown.map((row) => (
-              <div
-                key={row.parentId}
-                className="flex flex-col gap-2 border-b border-sand-300/50 py-3 last:border-b-0"
-              >
-                <div className="flex items-baseline gap-2">
-                  <CategoryDot accent={accentOf(categories, row.parentId)} />
-                  <span className="min-w-0 flex-1 truncate font-display font-semibold">
-                    {nameOf(row.parentId)}
-                  </span>
-                  <span className="shrink-0 text-xs tabular-nums text-umber-700">
-                    {out > 0 ? Math.round((row.totalCents / out) * 100) : 0}%
-                  </span>
-                  <Amount cents={row.totalCents} sign="none" className="shrink-0 font-semibold" />
-                </div>
+            {breakdown.map((row) => {
+              const { own, inherited } = glyphOf(categories, row.parentId);
+              return (
+                <div
+                  key={row.parentId}
+                  className="flex flex-col gap-2 border-b border-sand-300/50 py-3 last:border-b-0"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <CategoryIcon
+                      accent={accentOf(categories, row.parentId)}
+                      name={nameOf(row.parentId)}
+                      icon={own}
+                      inherit={inherited}
+                      className="size-8"
+                      glyphClassName="size-4"
+                    />
+                    <span className="min-w-0 flex-1 truncate font-display font-semibold">
+                      {nameOf(row.parentId)}
+                    </span>
+                    <span className="shrink-0 text-xs tabular-nums text-umber-700">
+                      {out > 0 ? Math.round((row.totalCents / out) * 100) : 0}%
+                    </span>
+                    <Amount cents={row.totalCents} sign="none" className="shrink-0 font-semibold" />
+                  </div>
 
-                <div className="h-1.5 overflow-hidden rounded-control bg-clay-200">
-                  <div
-                    className={`h-full rounded-control transition-[width] duration-200 ease-out ${
-                      accentBg[accentOf(categories, row.parentId)]
-                    }`}
-                    style={{ width: `${largest > 0 ? (row.totalCents / largest) * 100 : 0}%` }}
-                  />
-                </div>
+                  <div className="h-1.5 overflow-hidden rounded-control bg-clay-200">
+                    <div
+                      className={`h-full rounded-control transition-[width] duration-200 ease-out ${
+                        accentBg[accentOf(categories, row.parentId)]
+                      }`}
+                      style={{ width: `${largest > 0 ? (row.totalCents / largest) * 100 : 0}%` }}
+                    />
+                  </div>
 
-                {/* the subcategory line — what the parent total is actually made
-                    of, which is the question a ranked bar always provokes */}
-                <p className="truncate text-xs text-umber-700">
-                  {row.subs
-                    .map((sub) => `${nameOf(sub.categoryId)} ${formatMoney(sub.totalCents)}`)
-                    .join("  ·  ")}
-                </p>
-              </div>
-            ))}
+                  {/* the subcategory line — what the parent total is actually made
+                      of, which is the question a ranked bar always provokes */}
+                  <p className="truncate text-xs text-umber-700">
+                    {row.subs
+                      .map((sub) => `${nameOf(sub.categoryId)} ${formatMoney(sub.totalCents)}`)
+                      .join("  ·  ")}
+                  </p>
+                </div>
+              );
+            })}
           </section>
         )}
       </div>
@@ -260,11 +286,13 @@ function Key({ swatch, label }: { swatch: string; label: string }) {
 function Total({
   label,
   cents,
+  icon: Glyph,
   tone,
   wide = false,
 }: {
   label: string;
   cents: number;
+  icon: Icon;
   tone?: "in";
   wide?: boolean;
 }) {
@@ -274,7 +302,8 @@ function Total({
         wide ? "col-span-2 flex items-center justify-between" : ""
       }`}
     >
-      <p className="font-display text-xs font-semibold uppercase tracking-wider text-umber-700">
+      <p className="flex items-center gap-1.5 font-display text-xs font-semibold uppercase tracking-wider text-umber-700">
+        <Glyph aria-hidden className="size-3.5" />
         {label}
       </p>
       <Amount

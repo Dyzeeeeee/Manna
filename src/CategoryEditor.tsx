@@ -1,10 +1,18 @@
-import { ChevronRight, Plus } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@ui/Button";
 import { Input } from "@ui/Input";
 
-import { accentBg } from "./Amount";
+import { accentBg, CategoryIcon } from "./Amount";
+import {
+  glyph,
+  ICON_GROUPS,
+  IconAdd,
+  IconForward,
+  iconLabel,
+  iconNameFor,
+  type IconName,
+} from "./icons";
 import { ACCENTS, type Accent, type Category } from "./money";
 import { saveCategory } from "./store";
 
@@ -46,6 +54,8 @@ export function CategoryEditor({ categories }: { categories: Category[] }) {
       name: "New category",
       for: kind,
       accent,
+      // the neutral tag, until it is given a name or an icon of its own
+      icon: "tag",
       order: live.length,
       createdAt: new Date().toISOString(),
     });
@@ -70,7 +80,9 @@ export function CategoryEditor({ categories }: { categories: Category[] }) {
     <div className="flex flex-col gap-3">
       <p className="text-sm text-umber-700">
         Two levels only. Merchants belong in the transaction note, not here — "Jollibee" is a
-        note, not a category. Keep parents between 8 and 12 so they fit one screen.
+        note, not a category. Keep parents between 8 and 12 so they fit one screen. Colour and
+        icon are set on the parent; subcategories take theirs from their own name, falling back
+        to the family's.
       </p>
 
       <div className="flex rounded-control bg-clay-200 p-1">
@@ -112,19 +124,20 @@ export function CategoryEditor({ categories }: { categories: Category[] }) {
                     type="button"
                     onClick={() => setOpenParent(open ? null : parent.id)}
                     aria-expanded={open}
-                    className="flex min-w-0 flex-1 items-center gap-3 py-3.5 text-left"
+                    className="flex min-w-0 flex-1 items-center gap-3 py-3 text-left"
                   >
-                    <ChevronRight
+                    <IconForward
                       aria-hidden
                       className={`size-4 shrink-0 text-umber-700 transition-transform duration-200 ${
                         open ? "rotate-90" : ""
                       }`}
                     />
-                    <span
-                      aria-hidden
-                      className={`size-2.5 shrink-0 rounded-control ${
-                        accentBg[parent.accent ?? "sage"]
-                      }`}
+                    {/* the real tile, not a swatch: what you are about to change
+                        is exactly what the add sheet will show */}
+                    <CategoryIcon
+                      accent={parent.accent ?? "sage"}
+                      name={parent.name}
+                      icon={parent.icon}
                     />
                     <span className="min-w-0 flex-1 truncate font-display font-semibold">
                       {parent.name}
@@ -145,6 +158,11 @@ export function CategoryEditor({ categories }: { categories: Category[] }) {
 
               {open && (
                 <div className="ml-7 border-l-2 border-sand-300/60 pb-3 pl-3">
+                  {/* Subs have no icon of their own to set — rule 1 keeps the
+                      taxonomy two levels deep and the icon lives on the parent
+                      like the colour. The glyph shown here is the one they will
+                      get: matched from their name, or the family's if nothing
+                      matches. Showing it read-only is the honest way to say so. */}
                   {subs.map((sub) =>
                     editing?.level === "sub" && editing.id === sub.id ? (
                       <CategoryForm key={sub.id} category={sub} onDone={() => setEditing(null)} />
@@ -153,8 +171,9 @@ export function CategoryEditor({ categories }: { categories: Category[] }) {
                         key={sub.id}
                         type="button"
                         onClick={() => setEditing({ level: "sub", id: sub.id })}
-                        className="flex w-full items-center gap-2 border-b border-sand-300/40 py-2.5 pr-2 text-left text-sm transition-colors duration-150 last:border-b-0 hover:text-umber-900"
+                        className="flex w-full items-center gap-2.5 border-b border-sand-300/40 py-2 pr-2 text-left text-sm transition-colors duration-150 last:border-b-0 hover:text-umber-900"
                       >
+                        <SubGlyph name={sub.name} inherit={parent.icon} />
                         <span className="min-w-0 flex-1 truncate">{sub.name}</span>
                       </button>
                     ),
@@ -164,7 +183,7 @@ export function CategoryEditor({ categories }: { categories: Category[] }) {
                     onClick={() => void addSub(parent)}
                     className="mt-2 flex min-h-10 w-full items-center justify-center gap-1.5 rounded-control border border-dashed border-sand-300 text-sm font-semibold text-umber-700 transition-colors duration-150 hover:bg-clay-200 hover:text-umber-900"
                   >
-                    <Plus aria-hidden className="size-3.5" />
+                    <IconAdd aria-hidden className="size-3.5" />
                     Add subcategory to {parent.name}
                   </button>
                 </div>
@@ -180,7 +199,7 @@ export function CategoryEditor({ categories }: { categories: Category[] }) {
         disabled={live.length >= MAX_PARENTS}
         className="gap-2 self-center"
       >
-        <Plus className="size-4" />
+        <IconAdd className="size-4" />
         Add a parent category
       </Button>
 
@@ -197,7 +216,7 @@ export function CategoryEditor({ categories }: { categories: Category[] }) {
             onClick={() => setShowArchived(!showArchived)}
             className="flex items-center gap-2 self-start font-display text-sm font-semibold text-umber-700"
           >
-            <ChevronRight
+            <IconForward
               aria-hidden
               className={`size-4 transition-transform duration-200 ${showArchived ? "rotate-90" : ""}`}
             />
@@ -213,6 +232,7 @@ export function CategoryEditor({ categories }: { categories: Category[] }) {
                     i === 0 ? "" : "border-t border-sand-300/50"
                   }`}
                 >
+                  <SubGlyph name={c.name} inherit={c.icon} />
                   <span className="min-w-0 flex-1 truncate text-sm text-umber-700">
                     {c.name}
                     {c.parentId && <span className="text-umber-700/70"> · subcategory</span>}
@@ -239,8 +259,14 @@ export function CategoryEditor({ categories }: { categories: Category[] }) {
   );
 }
 
-/** Rename, recolour, archive. One form for both levels; only a parent owns a
- *  colour, so only a parent is offered the swatches. */
+/** The glyph a subcategory will be drawn with, shown but not editable. */
+function SubGlyph({ name, inherit }: { name: string; inherit?: string }) {
+  const Glyph = glyph(iconNameFor(undefined, name, inherit)).line;
+  return <Glyph aria-hidden className="size-4 shrink-0 text-umber-700" />;
+}
+
+/** Rename, recolour, re-icon, archive. One form for both levels; only a parent
+ *  owns a colour and an icon, so only a parent is offered those two grids. */
 function CategoryForm({
   category,
   showColour = false,
@@ -252,6 +278,11 @@ function CategoryForm({
 }) {
   const [name, setName] = useState(category.name);
   const [accent, setAccent] = useState<Accent>(category.accent ?? "sage");
+  /* Seeded through the same resolver the rest of the app uses, so a parent that
+     has never been given an icon opens on whatever its name currently earns
+     rather than on nothing — saving then makes that choice explicit instead of
+     silently changing the glyph. */
+  const [icon, setIcon] = useState<IconName>(() => iconNameFor(category.icon, category.name));
 
   async function save() {
     const trimmed = name.trim();
@@ -259,47 +290,59 @@ function CategoryForm({
     await saveCategory({
       ...category,
       name: trimmed,
-      ...(showColour ? { accent } : {}),
+      ...(showColour ? { accent, icon } : {}),
     });
     onDone();
   }
 
   return (
     <div className="flex flex-col gap-3 border-y border-sage-500/40 bg-clay-200/50 p-4">
-      <Input
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            void save();
-          }
-        }}
-        aria-label="Category name"
-        maxLength={28}
-        autoFocus
-      />
+      <div className="flex items-center gap-3">
+        {showColour && (
+          /* The live preview. Colour and icon are chosen separately below but
+             only ever seen together, so the pair is shown as the finished tile
+             rather than left to be imagined. */
+          <CategoryIcon accent={accent} name={name} icon={icon} className="size-11" />
+        )}
+        <Input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              void save();
+            }
+          }}
+          aria-label="Category name"
+          maxLength={28}
+          autoFocus
+        />
+      </div>
 
       {showColour && (
-        <div className="flex flex-col gap-2">
-          <p className="font-display text-xs font-semibold uppercase tracking-wider text-umber-700">
-            Colour
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {ACCENTS.map((a) => (
-              <button
-                key={a}
-                type="button"
-                onClick={() => setAccent(a)}
-                aria-label={a}
-                aria-pressed={a === accent}
-                className={`size-7 rounded-control ${accentBg[a]} ${
-                  a === accent ? "ring-2 ring-umber-900 ring-offset-2 ring-offset-clay-200" : ""
-                }`}
-              />
-            ))}
+        <>
+          <div className="flex flex-col gap-2">
+            <p className="font-display text-xs font-semibold uppercase tracking-wider text-umber-700">
+              Colour
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {ACCENTS.map((a) => (
+                <button
+                  key={a}
+                  type="button"
+                  onClick={() => setAccent(a)}
+                  aria-label={a}
+                  aria-pressed={a === accent}
+                  className={`size-7 rounded-control ${accentBg[a]} ${
+                    a === accent ? "ring-2 ring-umber-900 ring-offset-2 ring-offset-clay-200" : ""
+                  }`}
+                />
+              ))}
+            </div>
           </div>
-        </div>
+
+          <IconPicker accent={accent} value={icon} onChange={setIcon} />
+        </>
       )}
 
       <div className="flex items-center justify-between gap-2">
@@ -318,6 +361,66 @@ function CategoryForm({
             Save
           </Button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/** The catalogue as a grid, grouped by subject and capped in height so it never
+ *  pushes the Save button off screen.
+ *
+ *  Grouped rather than one flat run of ninety squares: you arrive knowing
+ *  roughly what you want — something to do with the house, something to do with
+ *  money — and the headings turn that into a short scan. Every square is drawn
+ *  in the accent currently selected, because an icon is never seen apart from
+ *  its colour once it is in use. */
+function IconPicker({
+  accent,
+  value,
+  onChange,
+}: {
+  accent: Accent;
+  value: IconName;
+  onChange: (name: IconName) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-baseline justify-between gap-2">
+        <p className="font-display text-xs font-semibold uppercase tracking-wider text-umber-700">
+          Icon
+        </p>
+        <p className="text-xs text-umber-700">{iconLabel(value)}</p>
+      </div>
+
+      <div className="max-h-64 overflow-y-auto rounded-tile bg-clay-100 p-2">
+        {ICON_GROUPS.map((group) => (
+          <section key={group.label} className="pb-1">
+            <h4 className="px-1 pb-1.5 pt-2 text-xs text-umber-700">{group.label}</h4>
+            <div className="grid grid-cols-6 gap-1.5 sm:grid-cols-8">
+              {group.names.map((name) => {
+                const Glyph = glyph(name).fill;
+                const selected = name === value;
+                return (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => onChange(name)}
+                    aria-label={iconLabel(name)}
+                    aria-pressed={selected}
+                    title={iconLabel(name)}
+                    className={`flex aspect-square items-center justify-center rounded-control transition duration-150 active:brightness-95 ${
+                      selected
+                        ? `${accentBg[accent]} text-clay-50`
+                        : "bg-clay-200 text-umber-700 hover:text-umber-900"
+                    }`}
+                  >
+                    <Glyph className="size-5" />
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        ))}
       </div>
     </div>
   );

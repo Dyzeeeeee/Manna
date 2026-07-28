@@ -91,10 +91,17 @@ const SEEDED_AT = "2026-01-01T00:00:00.000Z";
 
    Parents are listed in the order you pick them on the add sheet — heaviest
    first — because a parent is chosen on every log and that order is part of the
-   five-second bar. The list index becomes each parent's `order` below. */
+   five-second bar. The list index becomes each parent's `order` below.
+
+   Each parent also ships with an icon, which is what the add sheet leads with
+   — a tinted glyph is recognised before the word under it is read. The value is
+   a key into the catalogue in icons.tsx, and it is only a starting point:
+   Settings lets any parent be given a different one, and subcategories have no
+   icon of their own (they match on their name, then inherit). */
 interface SeedParent {
   name: string;
   accent: Accent;
+  icon: string;
   subs: string[];
 }
 
@@ -103,17 +110,20 @@ const EXPENSE_TREE: SeedParent[] = [
   {
     name: "Food",
     accent: "clay",
+    icon: "utensils",
     subs: ["Groceries", "Dining Out", "Coffee & Snacks", "Water Refill"],
   },
   // "Registration" only — insurance is consolidated under Financial
   {
     name: "Transportation",
     accent: "indigo",
+    icon: "bus",
     subs: ["Fuel", "Fare", "Maintenance & Repair", "Parking & Toll", "Registration"],
   },
   {
     name: "Housing & Utilities",
     accent: "teal",
+    icon: "house",
     subs: ["Rent", "Electricity", "Water Bill", "Internet", "LPG", "Household Supplies", "Repairs"],
   },
   {
@@ -121,36 +131,63 @@ const EXPENSE_TREE: SeedParent[] = [
     // strip and the floor allotment read from
     name: "Giving",
     accent: "gold",
+    icon: "hand-heart",
     subs: ["Tithe", "Offering", "Sponsorship", "Gifts", "Family Support", "Hospitality"],
   },
   // "Grooming & Care" is the old Grooming + Personal Care, merged
-  { name: "Personal", accent: "plum", subs: ["Clothing", "Grooming & Care"] },
-  { name: "Health", accent: "rose", subs: ["Medicine", "Consultation", "Dental", "Fitness"] },
+  { name: "Personal", accent: "plum", icon: "shirt", subs: ["Clothing", "Grooming & Care"] },
+  {
+    name: "Health",
+    accent: "rose",
+    icon: "pulse",
+    subs: ["Medicine", "Consultation", "Dental", "Fitness"],
+  },
   // no "Subscriptions": recurring digital spend files by purpose (streaming →
   // Leisure, cloud/tools → Software & Domains, gym → Fitness). Being recurring
   // is the Recurring feature's job, not a category's.
   {
     name: "Communication & Tech",
     accent: "slate",
+    icon: "phone",
     subs: ["Load & Phone Plan", "Devices", "Software & Domains"],
   },
-  { name: "Leisure", accent: "rust", subs: ["Entertainment", "Travel & Outings", "Hobbies"] },
+  {
+    name: "Leisure",
+    accent: "rust",
+    icon: "ticket",
+    subs: ["Entertainment", "Travel & Outings", "Hobbies"],
+  },
   // insurance lives here (one home; the type goes in the note). Debt principal
   // moves as a transfer carrying debt_id — never a category — so "Loan &
   // Installment" is absent and only the *cost* of borrowing is ever spending.
-  { name: "Financial", accent: "sage", subs: ["Interest & Fees", "Taxes", "Insurance"] },
-  { name: "Learning", accent: "moss", subs: ["Books", "Courses", "Materials"] },
-  { name: "Work", accent: "ochre", subs: ["Tools & Equipment", "Fees & Licenses"] },
+  {
+    name: "Financial",
+    accent: "sage",
+    icon: "bank",
+    subs: ["Interest & Fees", "Taxes", "Insurance"],
+  },
+  { name: "Learning", accent: "moss", icon: "graduation", subs: ["Books", "Courses", "Materials"] },
+  {
+    name: "Work",
+    accent: "ochre",
+    icon: "briefcase",
+    subs: ["Tools & Equipment", "Fees & Licenses"],
+  },
 ];
 
 /* Income parents share the green end of the palette so in and out read apart at
    a glance. A repaid loan is a transfer, not income, so "Debt Repaid to You" is
    deliberately absent. */
 const INCOME_TREE: SeedParent[] = [
-  { name: "Earned", accent: "teal", subs: ["Salary", "Freelance", "Bonus", "Overtime"] },
-  { name: "Business", accent: "moss", subs: ["Sales", "Commission"] },
-  { name: "Passive", accent: "olive", subs: ["Interest", "Dividends", "Rental"] },
-  { name: "Other", accent: "sage", subs: ["Gifts Received", "Refunds", "Resale"] },
+  {
+    name: "Earned",
+    accent: "teal",
+    icon: "cash",
+    subs: ["Salary", "Freelance", "Bonus", "Overtime"],
+  },
+  { name: "Business", accent: "moss", icon: "store", subs: ["Sales", "Commission"] },
+  { name: "Passive", accent: "olive", icon: "chart", subs: ["Interest", "Dividends", "Rental"] },
+  { name: "Other", accent: "sage", icon: "gift", subs: ["Gifts Received", "Refunds", "Resale"] },
 ];
 
 const slug = (name: string) =>
@@ -167,7 +204,15 @@ function expand(tree: SeedParent[], forKind: "expense" | "income"): Category[] {
   return tree.flatMap((parent, order) => {
     const id = `cat-${prefix}-${slug(parent.name)}`;
     return [
-      { id, name: parent.name, for: forKind, accent: parent.accent, order, createdAt: SEEDED_AT },
+      {
+        id,
+        name: parent.name,
+        for: forKind,
+        accent: parent.accent,
+        icon: parent.icon,
+        order,
+        createdAt: SEEDED_AT,
+      },
       ...parent.subs.map((sub, subOrder) => ({
         id: `${id}-${slug(sub)}`,
         name: sub,
@@ -207,7 +252,7 @@ const SEED_WALLETS: Wallet[] = [
    lean taxonomy replaced the original. When the stored version is behind this
    one, the current defaults are re-applied and the default rows we've since
    retired are removed — see reconcileDefaultCategories. */
-const SEED_VERSION = "3";
+const SEED_VERSION = "4";
 const SEED_VERSION_KEY = "manna:seed-version";
 
 /* Seeded categories carry derived ids (cat-exp-…, cat-inc-…); a category you add
@@ -217,11 +262,12 @@ const SEED_VERSION_KEY = "manna:seed-version";
 const DEFAULT_CATEGORY_ID = /^cat-(exp|inc)-/;
 
 /** Bring an already-seeded install up to the current defaults: upsert today's
- *  set (adds new parents/subs, applies the reordered `order` and recoloured
- *  accents) and delete the default rows no longer in it. Categories you created
- *  (uuid ids) are left untouched. It does re-apply default names, so a renamed
- *  default would revert — acceptable because this runs only on a deliberate
- *  SEED_VERSION bump, i.e. when the defaults are meant to move. */
+ *  set (adds new parents/subs, applies the reordered `order`, recoloured accents
+ *  and default icons) and delete the default rows no longer in it. Categories
+ *  you created (uuid ids) are left untouched. It does re-apply default names and
+ *  icons, so a renamed or re-iconed default would revert — acceptable because
+ *  this runs only on a deliberate SEED_VERSION bump, i.e. when the defaults are
+ *  meant to move. */
 async function reconcileDefaultCategories(existing: Category[]): Promise<void> {
   const current = new Set(SEED_CATEGORIES.map((c) => c.id));
   const retired = existing.filter((c) => DEFAULT_CATEGORY_ID.test(c.id) && !current.has(c.id));
