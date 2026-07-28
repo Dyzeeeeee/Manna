@@ -1,0 +1,329 @@
+/* Manna's own base layer. Tokens and the design system come from `@ui/tokens.css`,
+   which Tiswell owns — anything here is true of Manna only, and must not be
+   pushed up into the shared file.
+
+   Installed to a home screen, Manna is handled like an app, not a page: a
+   long-press on a category tile should feel like a press, not raise selection
+   handles and the iOS "Copy / Look Up" callout, and the double-taps the numpad
+   invites should not leave a digit highlighted. Both are page behaviours that
+   read as bugs once the browser chrome is gone.
+
+   `@layer base` rather than bare rules on purpose — that keeps a Tailwind
+   `select-text` utility able to win, so a screen can opt a block back in
+   (a long note worth copying, say) without an `!important`. */
+@layer base {
+  html {
+    /* the grey flash Android draws over whatever was tapped */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html,
+  body {
+    /* Chrome's pull-to-refresh is scroll chaining from the page reaching the
+       browser's own gesture handling once you overscroll past the top — this
+       stops the chain there instead of at the browser. `contain`, not `none`,
+       so a real scroll still gets its native rubber-band feedback; it just
+       never escalates into reloading the app out from under an in-progress
+       log. */
+    overscroll-behavior-y: contain;
+  }
+
+  body {
+    -webkit-user-select: none; /* Safari still wants the prefix */
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* Editing is the exception: an amount or a note needs a caret, and selecting
+     inside a field is how you correct one. */
+  input,
+  textarea,
+  select,
+  [contenteditable]:not([contenteditable="false"]) {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+}
+
+/* ── Named themes ────────────────────────────────────────────────────────────
+   System stays the default and needs nothing here — it's the existing
+   `prefers-color-scheme` block in `@ui/tokens.css`. Shark and Penguin are
+   picked from Settings → General (see useTheme in store.ts) and set as
+   `data-theme` on the document root — and each still follows the OS's own
+   light/dark setting, same as System does, rather than pinning to one mode:
+   picking a theme chooses its *identity*, not whether your screen goes dark
+   at night.
+
+   `:root[data-theme=…]` rather than a class: the attribute selector's extra
+   specificity is what lets a plain rule here outrank tokens.css's own
+   `@media (prefers-color-scheme: dark) { :root {...} }` block without needing
+   `!important` or caring which file's stylesheet loads first. Each theme is
+   two blocks with identical selectors and equal specificity — a bare one for
+   light, and one nested in the same dark media query tokens.css uses for the
+   dark override — so the cascade's normal "later rule wins a tie" rule is what
+   flips it, exactly the way tokens.css's own light-then-dark pair already
+   works. Both blocks redeclare every token the system pair touches, including
+   the twelve category accents, so nothing here ever falls through to pick up
+   a value meant for a different theme. */
+
+:root[data-theme="shark"] {
+  /* light — an overcast sea's surface, not a tinted version of the default */
+  color-scheme: light;
+
+  --color-clay-50: #eef3f5;
+  --color-clay-100: #e2eaed;
+  --color-clay-200: #d3e0e5;
+  --color-umber-900: #16232b;
+  --color-umber-700: #4d6470;
+  --color-sage-500: #2a93a1; /* the one warm-blooded colour: a shark-teal accent */
+  --color-sand-300: #c3d3d8;
+
+  --color-raised: #ffffff;
+  --color-scrim: rgb(10 20 25 / 0.25);
+
+  /* the app's one deliberately dark focal surface, same as the default
+     palette's own light mode — Shark's version is navy instead of umber */
+  --color-balance: #16232b;
+  --color-balance-ink: #eef3f5;
+
+  /* light enough here that the default palette's own accents already carry */
+  --color-accent-sage: #8c9178;
+  --color-accent-clay: #b08068;
+  --color-accent-ochre: #b79a5c;
+  --color-accent-moss: #6e8c7a;
+  --color-accent-indigo: #7a85a0;
+  --color-accent-plum: #96798c;
+  --color-accent-rust: #a9705c;
+  --color-accent-teal: #5b8f8a;
+  --color-accent-olive: #8b8a4e;
+  --color-accent-rose: #b17c88;
+  --color-accent-slate: #6f7889;
+  --color-accent-gold: #c2a049;
+
+  --shadow-soft: 0 1px 2px rgb(10 30 40 / 0.07), 0 3px 10px rgb(10 30 40 / 0.09);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="shark"] {
+    /* dark — deep water, not a tinted version of the default dark mode */
+    color-scheme: dark;
+
+    --color-clay-50: #0d1520;
+    --color-clay-100: #131f2c;
+    --color-clay-200: #1b2a3a;
+    --color-umber-900: #e7eef2;
+    --color-umber-700: #93a7b3;
+    --color-sage-500: #4fb8c4;
+    --color-sand-300: #24384a;
+
+    --color-raised: #1b2a3a;
+    --color-scrim: rgb(3 8 12 / 0.6);
+
+    --color-balance: #14232f;
+    --color-balance-ink: #eaf4f7;
+
+    /* the same lift tokens.css's own dark mode works out for a near-black
+       background — reused rather than invented again, since the problem
+       (legibility of a muted accent on near-black) is the same problem */
+    --color-accent-sage: #a3ab8f;
+    --color-accent-clay: #c4967e;
+    --color-accent-ochre: #cbb073;
+    --color-accent-moss: #86a491;
+    --color-accent-indigo: #939eb8;
+    --color-accent-plum: #ae90a4;
+    --color-accent-rust: #c08874;
+    --color-accent-teal: #79a9a4;
+    --color-accent-olive: #a7a568;
+    --color-accent-rose: #c896a2;
+    --color-accent-slate: #8b94a6;
+    --color-accent-gold: #d6b55f;
+
+    --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.45), 0 3px 10px rgb(0 0 0 / 0.5);
+  }
+}
+
+:root[data-theme="penguin"] {
+  /* light — the white belly */
+  color-scheme: light;
+
+  --color-clay-50: #fafafa; /* cool, not the default's warm cream */
+  --color-clay-100: #f1f1f1;
+  --color-clay-200: #e4e4e4;
+  --color-umber-900: #161616; /* tuxedo-black ink */
+  --color-umber-700: #5c5c5c;
+  --color-sage-500: #bd7b2e; /* the one warm colour: a beak-amber accent */
+  --color-sand-300: #d4d4d4;
+
+  --color-raised: #ffffff;
+  --color-scrim: rgb(20 20 20 / 0.25);
+
+  --color-balance: #161616;
+  --color-balance-ink: #fafafa;
+
+  /* the default palette's own values already carry on a background this
+     light — Penguin is close enough in lightness to reuse them outright */
+  --color-accent-sage: #8c9178;
+  --color-accent-clay: #b08068;
+  --color-accent-ochre: #b79a5c;
+  --color-accent-moss: #6e8c7a;
+  --color-accent-indigo: #7a85a0;
+  --color-accent-plum: #96798c;
+  --color-accent-rust: #a9705c;
+  --color-accent-teal: #5b8f8a;
+  --color-accent-olive: #8b8a4e;
+  --color-accent-rose: #b17c88;
+  --color-accent-slate: #6f7889;
+  --color-accent-gold: #c2a049;
+
+  --shadow-soft: 0 1px 2px rgb(74 64 56 / 0.06), 0 3px 10px rgb(74 64 56 / 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="penguin"] {
+    /* dark — the black back, turned around */
+    color-scheme: dark;
+
+    --color-clay-50: #121212; /* neutral near-black, not navy like Shark's */
+    --color-clay-100: #1c1c1c;
+    --color-clay-200: #292929;
+    --color-umber-900: #f5f5f5;
+    --color-umber-700: #a3a3a3;
+    --color-sage-500: #d99a44; /* the beak accent, lifted for the darker surface */
+    --color-sand-300: #383838;
+
+    --color-raised: #292929;
+    --color-scrim: rgb(0 0 0 / 0.55);
+
+    /* stays a dark, muted shade rather than inverting to a bright slab — a
+       glaring white card would fight everything else being dark, the same
+       reason the default palette's own dark mode keeps its balance card dark
+       too instead of flipping it to cream */
+    --color-balance: #2a2320;
+    --color-balance-ink: #f5f5f5;
+
+    /* the same lift Shark's dark mode uses — same problem, same fix */
+    --color-accent-sage: #a3ab8f;
+    --color-accent-clay: #c4967e;
+    --color-accent-ochre: #cbb073;
+    --color-accent-moss: #86a491;
+    --color-accent-indigo: #939eb8;
+    --color-accent-plum: #ae90a4;
+    --color-accent-rust: #c08874;
+    --color-accent-teal: #79a9a4;
+    --color-accent-olive: #a7a568;
+    --color-accent-rose: #c896a2;
+    --color-accent-slate: #8b94a6;
+    --color-accent-gold: #d6b55f;
+
+    --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.4), 0 3px 10px rgb(0 0 0 / 0.45);
+  }
+}
+
+/* ── The add drawer ─────────────────────────────────────────────────────────
+   Logging is a drawer pulled up over whatever you were looking at, not a place
+   you navigate to. The sheet is full-bleed, so without the slide there is no
+   moment that says the app is still underneath and Back returns to it — it
+   just cuts, and a cut to a full screen reads as a page change.
+
+   Plain classes rather than `--animate-*` theme tokens: those live in
+   `@ui/tokens.css`, which Tiswell owns, and none of this is true of anything
+   but Manna's add sheet. Unlayered on purpose as well, so they outrank the
+   utilities sitting on the same element. */
+
+.drawer-in {
+  animation: drawer-in 260ms cubic-bezier(0.32, 0.72, 0, 1) backwards;
+}
+
+.drawer-out {
+  animation: drawer-out 200ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+@keyframes drawer-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes drawer-out {
+  to {
+    transform: translateY(100%);
+  }
+}
+
+/* One step to the next. The panel that leaves is the one under your finger —
+   this is the one arriving, entering from the side you swiped towards.
+
+   Short travel on purpose: the header, the progress dots and the footer button
+   all stay put, so a full-width slide would read as the whole screen changing
+   when only the middle of it did.
+
+   `backwards` rather than `both`: the panel carries an inline transform while
+   it is being dragged, and a forwards fill would hold the finished keyframe
+   over it — the next drag would move nothing. */
+.panel-next {
+  animation: panel-next 200ms ease-out backwards;
+}
+
+.panel-prev {
+  animation: panel-prev 200ms ease-out backwards;
+}
+
+@keyframes panel-next {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+}
+
+@keyframes panel-prev {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+}
+
+/* Reduced motion still needs the transition to be *legible* — something has to
+   mark that the panel changed — so travel is dropped and the fade kept. */
+@media (prefers-reduced-motion: reduce) {
+  .drawer-in,
+  .panel-next,
+  .panel-prev {
+    animation: quiet-in 120ms ease-out backwards;
+  }
+
+  .drawer-out {
+    animation: quiet-out 120ms ease-out forwards;
+  }
+
+  @keyframes quiet-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes quiet-out {
+    to {
+      opacity: 0;
+    }
+  }
+}
+
+/* The amount panel's caret — see AmountPanel in AddSheet.tsx for why it's
+   there. A CSS animation rather than a JS interval: it only has to run while
+   mounted, and a `setInterval` would need its own cleanup for no more fidelity. */
+.amount-caret {
+  animation: caret-blink 1s step-end infinite;
+}
+
+@keyframes caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .amount-caret {
+    animation: none;
+    opacity: 0.6;
+  }
+}

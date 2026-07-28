@@ -7,6 +7,20 @@
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F4EFE6" />
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1E1A17" />
 
+    <!-- Applied before React mounts, from the same localStorage key store.ts's
+         useTheme reads — otherwise a named theme (Shark, Penguin) would paint
+         the default palette first and then jump, the exact flash the system
+         dark mode below never has because the browser applies it at CSS-parse
+         time with no JS in the loop. -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem("manna:theme");
+          if (t === "shark" || t === "penguin") document.documentElement.setAttribute("data-theme", t);
+        } catch (e) {}
+      })();
+    </script>
+
     <!-- Android reads display/standalone from the manifest; iOS historically
          needed these, and still uses them for the home-screen label and the
          status bar. Without apple-mobile-web-app-capable an older iPhone opens

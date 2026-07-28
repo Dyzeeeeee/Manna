@@ -1,0 +1,492 @@
+{
+  "TisWell/instant.perms.ts": {
+    "mtime": 1784877365.713971,
+    "ast_hash": "d73d7332393ea158e71512f948b28d5f",
+    "semantic_hash": "d73d7332393ea158e71512f948b28d5f"
+  },
+  "TisWell/instant.schema.ts": {
+    "mtime": 1784877365.7149715,
+    "ast_hash": "7e5b62fe471c620d025b1bc11c33594f",
+    "semantic_hash": "7e5b62fe471c620d025b1bc11c33594f"
+  },
+  "TisWell/package.json": {
+    "mtime": 1784877365.715973,
+    "ast_hash": "5c3efad4458e24defa79d704b75365c4",
+    "semantic_hash": "5c3efad4458e24defa79d704b75365c4"
+  },
+  "TisWell/scripts/generate-icons.mjs": {
+    "mtime": 1784877365.7243536,
+    "ast_hash": "c8de91a7ecb31da7e403e57f65204101",
+    "semantic_hash": "c8de91a7ecb31da7e403e57f65204101"
+  },
+  "TisWell/src/App.tsx": {
+    "mtime": 1784877365.7253528,
+    "ast_hash": "424a3866059510756515580efe84b420",
+    "semantic_hash": "424a3866059510756515580efe84b420"
+  },
+  "TisWell/src/data/AuthGate.tsx": {
+    "mtime": 1784877365.726363,
+    "ast_hash": "fbcbd90edd649bfb813d7133860af523",
+    "semantic_hash": "fbcbd90edd649bfb813d7133860af523"
+  },
+  "TisWell/src/data/env.d.ts": {
+    "mtime": 1784877365.727353,
+    "ast_hash": "c7f57d534573d7394d4f09146988b257",
+    "semantic_hash": "c7f57d534573d7394d4f09146988b257"
+  },
+  "TisWell/src/data/handshake.ts": {
+    "mtime": 1784877365.727353,
+    "ast_hash": "e5af71e6e2794f0833d4932792f1ed9b",
+    "semantic_hash": "e5af71e6e2794f0833d4932792f1ed9b"
+  },
+  "TisWell/src/data/hooks.ts": {
+    "mtime": 1784877365.728361,
+    "ast_hash": "5d5d6519dbfd51c94eb67e5b0f77d6c0",
+    "semantic_hash": "5d5d6519dbfd51c94eb67e5b0f77d6c0"
+  },
+  "TisWell/src/data/instant.ts": {
+    "mtime": 1784877365.728361,
+    "ast_hash": "f8c276b3f03a05c97be8fe42e6a299be",
+    "semantic_hash": "f8c276b3f03a05c97be8fe42e6a299be"
+  },
+  "TisWell/src/data/local.ts": {
+    "mtime": 1784877365.7298665,
+    "ast_hash": "3b4e2fbf08d407fe192284255d9c4026",
+    "semantic_hash": "3b4e2fbf08d407fe192284255d9c4026"
+  },
+  "TisWell/src/data/migrate.ts": {
+    "mtime": 1784877365.7298665,
+    "ast_hash": "745debbfdfcf4f713b7f650aac9c2562",
+    "semantic_hash": "745debbfdfcf4f713b7f650aac9c2562"
+  },
+  "TisWell/src/data/mirror.test.ts": {
+    "mtime": 1784877365.730877,
+    "ast_hash": "d219cbd83d618e77bf652fd608fd9115",
+    "semantic_hash": "d219cbd83d618e77bf652fd608fd9115"
+  },
+  "TisWell/src/data/mirror.ts": {
+    "mtime": 1784877365.730877,
+    "ast_hash": "1dc20122898980568db6b8b61b36c74b",
+    "semantic_hash": "1dc20122898980568db6b8b61b36c74b"
+  },
+  "TisWell/src/data/types.ts": {
+    "mtime": 1784877365.7318718,
+    "ast_hash": "2e36452b8507b4f4caacc994ef32a00a",
+    "semantic_hash": "2e36452b8507b4f4caacc994ef32a00a"
+  },
+  "TisWell/src/main.tsx": {
+    "mtime": 1784877365.7318718,
+    "ast_hash": "b391d428f992bee1dad9cffe86986c5d",
+    "semantic_hash": "b391d428f992bee1dad9cffe86986c5d"
+  },
+  "TisWell/src/shell/AppFrame.tsx": {
+    "mtime": 1784877365.7338767,
+    "ast_hash": "41a21eb46c421751ef67a0be8c714dfb",
+    "semantic_hash": "41a21eb46c421751ef67a0be8c714dfb"
+  },
+  "TisWell/src/shell/Capture.tsx": {
+    "mtime": 1784877365.7348726,
+    "ast_hash": "f0af757180b256eb8d42b6db7f79c969",
+    "semantic_hash": "f0af757180b256eb8d42b6db7f79c969"
+  },
+  "TisWell/src/shell/Chrome.tsx": {
+    "mtime": 1784877365.7348726,
+    "ast_hash": "f61d04499b471becb5e8a530fdb5799b",
+    "semantic_hash": "f61d04499b471becb5e8a530fdb5799b"
+  },
+  "TisWell/src/shell/Home.tsx": {
+    "mtime": 1784877365.7348726,
+    "ast_hash": "8aea50f0fbcc25f462be8360464d2ffb",
+    "semantic_hash": "8aea50f0fbcc25f462be8360464d2ffb"
+  },
+  "TisWell/src/shell/Inbox.tsx": {
+    "mtime": 1784877365.7358718,
+    "ast_hash": "ac969edcb95160a6a81e55003b899703",
+    "semantic_hash": "ac969edcb95160a6a81e55003b899703"
+  },
+  "TisWell/src/shell/Settings.tsx": {
+    "mtime": 1784877365.7368796,
+    "ast_hash": "30f60f6003b90d9ea445100f52d9f89d",
+    "semantic_hash": "30f60f6003b90d9ea445100f52d9f89d"
+  },
+  "TisWell/src/shell/appUrl.test.ts": {
+    "mtime": 1784877365.7368796,
+    "ast_hash": "8b87f0490ab646d390c3646f9b1930bc",
+    "semantic_hash": "8b87f0490ab646d390c3646f9b1930bc"
+  },
+  "TisWell/src/shell/appUrl.ts": {
+    "mtime": 1784877365.737879,
+    "ast_hash": "75af2794f1c9f2289a09ac141e97a16b",
+    "semantic_hash": "75af2794f1c9f2289a09ac141e97a16b"
+  },
+  "TisWell/src/shell/captures.ts": {
+    "mtime": 1784877365.7388828,
+    "ast_hash": "bb7a5120aced375d94a336d7e5cb1f8a",
+    "semantic_hash": "bb7a5120aced375d94a336d7e5cb1f8a"
+  },
+  "TisWell/src/shell/linkApps.ts": {
+    "mtime": 1784877365.7388828,
+    "ast_hash": "aa06314d347f8040b74c91ff89c12085",
+    "semantic_hash": "aa06314d347f8040b74c91ff89c12085"
+  },
+  "TisWell/src/shell/registry.ts": {
+    "mtime": 1784877365.7398767,
+    "ast_hash": "1c512b1628fe5eb05dcafd2e56295e23",
+    "semantic_hash": "1c512b1628fe5eb05dcafd2e56295e23"
+  },
+  "TisWell/src/ui/Button.tsx": {
+    "mtime": 1784877365.740913,
+    "ast_hash": "a4576ff042eec7ee592dc8b3f6e71f19",
+    "semantic_hash": "a4576ff042eec7ee592dc8b3f6e71f19"
+  },
+  "TisWell/src/ui/Card.tsx": {
+    "mtime": 1784877365.7419136,
+    "ast_hash": "653afece4d5e6055c871ac073427f936",
+    "semantic_hash": "653afece4d5e6055c871ac073427f936"
+  },
+  "TisWell/src/ui/Input.tsx": {
+    "mtime": 1784877365.7419136,
+    "ast_hash": "1fe6414c724684b7e14b82dbea6b0e84",
+    "semantic_hash": "1fe6414c724684b7e14b82dbea6b0e84"
+  },
+  "TisWell/src/ui/Select.tsx": {
+    "mtime": 1784877365.742909,
+    "ast_hash": "47ba02494e2f05b3685db8ad60cb839a",
+    "semantic_hash": "47ba02494e2f05b3685db8ad60cb839a"
+  },
+  "TisWell/src/ui/Sheet.tsx": {
+    "mtime": 1784877365.7439127,
+    "ast_hash": "02f07b135d4ed0244a941066cb8a9844",
+    "semantic_hash": "02f07b135d4ed0244a941066cb8a9844"
+  },
+  "TisWell/src/ui/Tile.tsx": {
+    "mtime": 1784877365.7439127,
+    "ast_hash": "842a42d5e3ea7153cee47ae70f467b3d",
+    "semantic_hash": "842a42d5e3ea7153cee47ae70f467b3d"
+  },
+  "TisWell/src/ui/time.ts": {
+    "mtime": 1784877365.7449095,
+    "ast_hash": "470284a51c1d6f6344fa77276fd41945",
+    "semantic_hash": "470284a51c1d6f6344fa77276fd41945"
+  },
+  "TisWell/src/vite-env.d.ts": {
+    "mtime": 1784877365.746918,
+    "ast_hash": "0f66b836165705f473b4c4d019c2a781",
+    "semantic_hash": "0f66b836165705f473b4c4d019c2a781"
+  },
+  "TisWell/tsconfig.app.json": {
+    "mtime": 1784877365.7489164,
+    "ast_hash": "f66e7d71f7cf4b7566245c83008d46cd",
+    "semantic_hash": "f66e7d71f7cf4b7566245c83008d46cd"
+  },
+  "TisWell/tsconfig.json": {
+    "mtime": 1784877365.7499175,
+    "ast_hash": "852c3a5df14a4b43ac28e9554ebedf4a",
+    "semantic_hash": "852c3a5df14a4b43ac28e9554ebedf4a"
+  },
+  "TisWell/tsconfig.node.json": {
+    "mtime": 1784877365.7504284,
+    "ast_hash": "68d596251adaa6e9858da79fc806d50d",
+    "semantic_hash": "68d596251adaa6e9858da79fc806d50d"
+  },
+  "TisWell/vite.config.ts": {
+    "mtime": 1784877365.7504284,
+    "ast_hash": "139fe4f7d25fbc99d73b783467c57a23",
+    "semantic_hash": "139fe4f7d25fbc99d73b783467c57a23"
+  },
+  "TisWell/vitest.config.ts": {
+    "mtime": 1784877365.7514355,
+    "ast_hash": "26aae4df78c1f57335caa46e0fadd143",
+    "semantic_hash": "26aae4df78c1f57335caa46e0fadd143"
+  },
+  "dev/main.tsx": {
+    "mtime": 1785253926.5304334,
+    "ast_hash": "19058cb79a10aa450f561a813f8159c8",
+    "semantic_hash": "19058cb79a10aa450f561a813f8159c8"
+  },
+  "package.json": {
+    "mtime": 1785175739.8704534,
+    "ast_hash": "383057b7b8ea254f34b959b6d3dcfbf5",
+    "semantic_hash": "383057b7b8ea254f34b959b6d3dcfbf5"
+  },
+  "scripts/generate-icons.mjs": {
+    "mtime": 1784715078.7209344,
+    "ast_hash": "52005da434f946563a145c5ff04624d8",
+    "semantic_hash": "52005da434f946563a145c5ff04624d8"
+  },
+  "src/AddSheet.tsx": {
+    "mtime": 1785255093.0266888,
+    "ast_hash": "b62031065d38993586eea389b85b7f8f",
+    "semantic_hash": "b62031065d38993586eea389b85b7f8f"
+  },
+  "src/Amount.tsx": {
+    "mtime": 1785176508.4774187,
+    "ast_hash": "a20c3de51ef89f0835ab37f473c0444b",
+    "semantic_hash": "a20c3de51ef89f0835ab37f473c0444b"
+  },
+  "src/BalanceCard.tsx": {
+    "mtime": 1785210548.0955493,
+    "ast_hash": "52be192c939b9b9400295ce7e4492ad1",
+    "semantic_hash": "52be192c939b9b9400295ce7e4492ad1"
+  },
+  "src/CaptureBox.tsx": {
+    "mtime": 1785210534.732159,
+    "ast_hash": "c405a2abcf3f8e2c0b55f6ba31cb08e8",
+    "semantic_hash": "c405a2abcf3f8e2c0b55f6ba31cb08e8"
+  },
+  "src/CategoryEditor.tsx": {
+    "mtime": 1785176663.8841279,
+    "ast_hash": "33e184ac67c38bb46a0e63980a275bd1",
+    "semantic_hash": "33e184ac67c38bb46a0e63980a275bd1"
+  },
+  "src/CategoryPicker.tsx": {
+    "mtime": 1785176560.9685783,
+    "ast_hash": "c308aeca1a47ce5ce166a75f58898a67",
+    "semantic_hash": "c308aeca1a47ce5ce166a75f58898a67"
+  },
+  "src/FilterChips.tsx": {
+    "mtime": 1785210562.4076102,
+    "ast_hash": "fc310efbc7797ee71fe0747293d26514",
+    "semantic_hash": "fc310efbc7797ee71fe0747293d26514"
+  },
+  "src/Home.tsx": {
+    "mtime": 1785176784.2201886,
+    "ast_hash": "0e566c08505222638418e10750e62dd4",
+    "semantic_hash": "0e566c08505222638418e10750e62dd4"
+  },
+  "src/Manna.tsx": {
+    "mtime": 1785176721.6730888,
+    "ast_hash": "ba429dae4c65e393041378eac497a5a4",
+    "semantic_hash": "ba429dae4c65e393041378eac497a5a4"
+  },
+  "src/Month.tsx": {
+    "mtime": 1785176832.288304,
+    "ast_hash": "0b592ff948a26820cd094ce46d99da5e",
+    "semantic_hash": "0b592ff948a26820cd094ce46d99da5e"
+  },
+  "src/Numpad.tsx": {
+    "mtime": 1785210520.1897578,
+    "ast_hash": "a96fce3facebda271bfa4a6708111e91",
+    "semantic_hash": "a96fce3facebda271bfa4a6708111e91"
+  },
+  "src/Owed.tsx": {
+    "mtime": 1785177083.277085,
+    "ast_hash": "ad49d0611ce49695fcf9af3cde6465f1",
+    "semantic_hash": "ad49d0611ce49695fcf9af3cde6465f1"
+  },
+  "src/Plan.tsx": {
+    "mtime": 1785176962.2574239,
+    "ast_hash": "dbc894746c7503c62663f07790411611",
+    "semantic_hash": "dbc894746c7503c62663f07790411611"
+  },
+  "src/RuleEditors.tsx": {
+    "mtime": 1785210510.323377,
+    "ast_hash": "2b47dc5347b814f9f656ddedca5d7032",
+    "semantic_hash": "2b47dc5347b814f9f656ddedca5d7032"
+  },
+  "src/Settings.tsx": {
+    "mtime": 1785211296.318341,
+    "ast_hash": "18fc105a77d870be226945441875e16d",
+    "semantic_hash": "18fc105a77d870be226945441875e16d"
+  },
+  "src/TxnList.tsx": {
+    "mtime": 1785176525.4995954,
+    "ast_hash": "914842490ebaef73ccb67d37f955e69b",
+    "semantic_hash": "914842490ebaef73ccb67d37f955e69b"
+  },
+  "src/TxnSheet.tsx": {
+    "mtime": 1785210659.0652514,
+    "ast_hash": "21c3d5643f9bd9c6fa3a79540b1c2be3",
+    "semantic_hash": "21c3d5643f9bd9c6fa3a79540b1c2be3"
+  },
+  "src/Wallets.tsx": {
+    "mtime": 1785177001.5787807,
+    "ast_hash": "83b652b1c94938eebc66031a2583c2ab",
+    "semantic_hash": "83b652b1c94938eebc66031a2583c2ab"
+  },
+  "src/capture.ts": {
+    "mtime": 1785152702.0498743,
+    "ast_hash": "0c0c79302c7d5890d21166d5be14a9d5",
+    "semantic_hash": "0c0c79302c7d5890d21166d5be14a9d5"
+  },
+  "src/icons.tsx": {
+    "mtime": 1785176682.109711,
+    "ast_hash": "da9e22387a4bbf562e6c878b7bc00c77",
+    "semantic_hash": "da9e22387a4bbf562e6c878b7bc00c77"
+  },
+  "src/index.ts": {
+    "mtime": 1784715008.3940632,
+    "ast_hash": "2c804cdb6d6bcdd172289966bded391d",
+    "semantic_hash": "2c804cdb6d6bcdd172289966bded391d"
+  },
+  "src/money.test.ts": {
+    "mtime": 1785151363.1654387,
+    "ast_hash": "6d363e2c4d537c92eb06659100126bcb",
+    "semantic_hash": "6d363e2c4d537c92eb06659100126bcb"
+  },
+  "src/money.ts": {
+    "mtime": 1785176485.4019704,
+    "ast_hash": "365c98a42f3087f35e82bc6e3f4228b6",
+    "semantic_hash": "365c98a42f3087f35e82bc6e3f4228b6"
+  },
+  "src/parse.test.ts": {
+    "mtime": 1785151589.5640507,
+    "ast_hash": "1f905c3cc0dc45331da4a33437b8583d",
+    "semantic_hash": "1f905c3cc0dc45331da4a33437b8583d"
+  },
+  "src/parse.ts": {
+    "mtime": 1785152243.4644132,
+    "ast_hash": "0d5a0f6b06059da57152933b97507391",
+    "semantic_hash": "0d5a0f6b06059da57152933b97507391"
+  },
+  "src/store.ts": {
+    "mtime": 1785176205.8398707,
+    "ast_hash": "2cc8c0b7735c954d742cdc2124935412",
+    "semantic_hash": "2cc8c0b7735c954d742cdc2124935412"
+  },
+  "src/vite-env.d.ts": {
+    "mtime": 1785211258.5859497,
+    "ast_hash": "a9cc3becee238d7b6baa5cd3eb1efdc6",
+    "semantic_hash": "a9cc3becee238d7b6baa5cd3eb1efdc6"
+  },
+  "tsconfig.json": {
+    "mtime": 1784877396.3259597,
+    "ast_hash": "7951c506ed54edc45565543d9d79f68d",
+    "semantic_hash": "7951c506ed54edc45565543d9d79f68d"
+  },
+  "vite.config.ts": {
+    "mtime": 1785211250.519888,
+    "ast_hash": "5b655d3cc6b344300a79701b3963f4b6",
+    "semantic_hash": "5b655d3cc6b344300a79701b3963f4b6"
+  },
+  "worker/.wrangler/tmp/bundle-Bpuzcm/middleware-insertion-facade.js": {
+    "mtime": 1785174910.1293218,
+    "ast_hash": "72a5da2f6348ba382a74465024c383fc",
+    "semantic_hash": "72a5da2f6348ba382a74465024c383fc"
+  },
+  "worker/.wrangler/tmp/bundle-Bpuzcm/middleware-loader.entry.ts": {
+    "mtime": 1785174910.1313205,
+    "ast_hash": "cff624bec69a229216ef45687ee19a49",
+    "semantic_hash": "cff624bec69a229216ef45687ee19a49"
+  },
+  "worker/.wrangler/tmp/dev-FSDb3G/index.js": {
+    "mtime": 1785174910.2535052,
+    "ast_hash": "9771df3051b7dd3ceb931c5da93adc9c",
+    "semantic_hash": "9771df3051b7dd3ceb931c5da93adc9c"
+  },
+  "worker/index.ts": {
+    "mtime": 1785152365.1307375,
+    "ast_hash": "8fac89fe03f95c36c232b7d382336dea",
+    "semantic_hash": "8fac89fe03f95c36c232b7d382336dea"
+  },
+  "worker/tsconfig.json": {
+    "mtime": 1785152315.2644975,
+    "ast_hash": "2565280794044df5159197546da7abdc",
+    "semantic_hash": "2565280794044df5159197546da7abdc"
+  },
+  "CLAUDE.md": {
+    "mtime": 1785211028.4395583,
+    "ast_hash": "de07b5d91fcdb609b24ce84d701bdf6e",
+    "semantic_hash": "de07b5d91fcdb609b24ce84d701bdf6e"
+  },
+  "README.md": {
+    "mtime": 1784715400.4465911,
+    "ast_hash": "2fc055a3b78a708976e7ece0e98216d2",
+    "semantic_hash": "2fc055a3b78a708976e7ece0e98216d2"
+  },
+  "ROADMAP.md": {
+    "mtime": 1784731953.9520335,
+    "ast_hash": "4412a883f17a094161d1ba1ae83c670c",
+    "semantic_hash": "4412a883f17a094161d1ba1ae83c670c"
+  },
+  "TisWell/README.md": {
+    "mtime": 1784877365.7074492,
+    "ast_hash": "eb597abeedb66675e9a55a8451bca0b1",
+    "semantic_hash": "eb597abeedb66675e9a55a8451bca0b1"
+  },
+  "TisWell/index.html": {
+    "mtime": 1784877371.7139711,
+    "ast_hash": "96835b66900848f2503f5f2005a4cd70",
+    "semantic_hash": "96835b66900848f2503f5f2005a4cd70"
+  },
+  "TisWell/pnpm-workspace.yaml": {
+    "mtime": 1784877365.7179673,
+    "ast_hash": "d7b5c031d094ebc9ec543fe0ebdf99cc",
+    "semantic_hash": "d7b5c031d094ebc9ec543fe0ebdf99cc"
+  },
+  "TisWell/src/miniapps/README.md": {
+    "mtime": 1784877365.7328806,
+    "ast_hash": "f16d0c861af7ae8ab437fe641bfc1e87",
+    "semantic_hash": "f16d0c861af7ae8ab437fe641bfc1e87"
+  },
+  "TisWell/tiswell-blueprint.md": {
+    "mtime": 1784877365.7479148,
+    "ast_hash": "b3f7a2647ae5f9c98ea3ab9173417cfa",
+    "semantic_hash": "b3f7a2647ae5f9c98ea3ab9173417cfa"
+  },
+  "index.html": {
+    "mtime": 1784880061.791536,
+    "ast_hash": "a8c935a336713ff8abb379bccdbb53b8",
+    "semantic_hash": "a8c935a336713ff8abb379bccdbb53b8"
+  },
+  "manna-prototype.html": {
+    "mtime": 1784867633.3800185,
+    "ast_hash": "350ec3cda6b264cda70c1e61e565746e",
+    "semantic_hash": "350ec3cda6b264cda70c1e61e565746e"
+  },
+  "worker/README.md": {
+    "mtime": 1785152432.485083,
+    "ast_hash": "6ba5d7829727ebf621bcc8d558698465",
+    "semantic_hash": "6ba5d7829727ebf621bcc8d558698465"
+  },
+  "TisWell/TisWell.png": {
+    "mtime": 1784877365.7129724,
+    "ast_hash": "49726e9157811ba051733b7e8b7485f3",
+    "semantic_hash": "49726e9157811ba051733b7e8b7485f3"
+  },
+  "TisWell/public/icons/icon-192.png": {
+    "mtime": 1784877365.7199686,
+    "ast_hash": "0aa0cc922f2e8fed4e129658c9c45ffc",
+    "semantic_hash": "0aa0cc922f2e8fed4e129658c9c45ffc"
+  },
+  "TisWell/public/icons/icon-512.png": {
+    "mtime": 1784877365.7199686,
+    "ast_hash": "de2de6eec9907b6685f1586f3828da1d",
+    "semantic_hash": "de2de6eec9907b6685f1586f3828da1d"
+  },
+  "TisWell/public/icons/logo.png": {
+    "mtime": 1784877365.7213588,
+    "ast_hash": "84e62b5a457aaa9cd02282a7a748d48d",
+    "semantic_hash": "84e62b5a457aaa9cd02282a7a748d48d"
+  },
+  "TisWell/public/icons/mark.svg": {
+    "mtime": 1784877365.7223518,
+    "ast_hash": "eeb2e0cdff76689ada96ed54bf30afa8",
+    "semantic_hash": "eeb2e0cdff76689ada96ed54bf30afa8"
+  },
+  "TisWell/public/icons/maskable-512.png": {
+    "mtime": 1784877365.7233608,
+    "ast_hash": "faf845f2de0cf1823758f9111d78fa26",
+    "semantic_hash": "faf845f2de0cf1823758f9111d78fa26"
+  },
+  "public/icons/icon-192.png": {
+    "mtime": 1784715110.483,
+    "ast_hash": "d840ef6672e68a8617508a39abe279ba",
+    "semantic_hash": "d840ef6672e68a8617508a39abe279ba"
+  },
+  "public/icons/icon-512.png": {
+    "mtime": 1784715110.491,
+    "ast_hash": "4344bfc1cbd72730da602503514084b5",
+    "semantic_hash": "4344bfc1cbd72730da602503514084b5"
+  },
+  "public/icons/mark.svg": {
+    "mtime": 1784715110.452398,
+    "ast_hash": "1d25947d3536bb497d48e7322dd12548",
+    "semantic_hash": "1d25947d3536bb497d48e7322dd12548"
+  },
+  "public/icons/maskable-512.png": {
+    "mtime": 1784715110.502,
+    "ast_hash": "a2ba370a9e8b203c0b43c3c70b4dcc1e",
+    "semantic_hash": "a2ba370a9e8b203c0b43c3c70b4dcc1e"
+  }
+}

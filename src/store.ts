@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { useDataReady, useRecords } from "@data/hooks";
 import { data } from "@data/instant";
@@ -337,6 +337,41 @@ export function lastCategoryId(categories: Category[]): string | undefined {
 
 export function lastWalletId(wallets: Wallet[]): string | undefined {
   return remembered(LAST_WALLET, wallets);
+}
+
+/* ── Theme ─────────────────────────────────────────────────────────────────
+   Same reasoning as the sticky defaults above: which palette you're looking
+   at is a property of this device, not something to carry to another one, so
+   it lives in localStorage rather than the shared database.
+
+   "System" is the app's original behaviour and needs nothing stored —
+   `prefers-color-scheme` decides, same as before this existed. Naming a theme
+   pins the palette regardless of the OS's own light/dark setting; app.css keys
+   its Shark and Penguin overrides off the `data-theme` attribute this sets on
+   the document root. index.html sets the same attribute inline, before React
+   mounts, so a named theme doesn't flash the default palette first. */
+
+export type Theme = "system" | "shark" | "penguin";
+const THEME_KEY = "manna:theme";
+
+function readTheme(): Theme {
+  const stored = localStorage.getItem(THEME_KEY);
+  return stored === "shark" || stored === "penguin" ? stored : "system";
+}
+
+function applyTheme(theme: Theme) {
+  if (theme === "system") document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.setAttribute("data-theme", theme);
+}
+
+export function useTheme(): [Theme, (theme: Theme) => void] {
+  const [theme, setThemeState] = useState<Theme>(readTheme);
+  useEffect(() => applyTheme(theme), [theme]);
+  const setTheme = (next: Theme) => {
+    localStorage.setItem(THEME_KEY, next);
+    setThemeState(next);
+  };
+  return [theme, setTheme];
 }
 
 /* ── Mutations ─────────────────────────────────────────────────────────── */

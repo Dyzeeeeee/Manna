@@ -4,6 +4,7 @@ import { CategoryEditor } from "./CategoryEditor";
 import { glyph, IconBack, IconSettings, type Icon } from "./icons";
 import { isSameDay, type Allotment, type Category, type Recurring, type Wallet } from "./money";
 import { AllotmentEditor, RecurringEditor } from "./RuleEditors";
+import { useTheme, type Theme } from "./store";
 
 /* Categories, Recurring, Allotments, General — and deliberately not Considering.
    A to-buy is not a rule, it is a thing you are weighing this month, so it is
@@ -19,6 +20,17 @@ type Tab = (typeof TABS)[number]["value"];
 
 const IconCurrency = glyph("coins").line;
 const IconApp = glyph("leaf").line;
+const IconTheme = glyph("palette").line;
+
+/** Swatches for the theme picker: each theme's light background beside its
+ *  dark one, the same pair app.css switches between on the OS's own setting —
+ *  a theme is an identity, not a fixed mode, so the chip shows both rather
+ *  than just whichever half happens to be active right now. */
+const THEMES: { value: Theme; label: string; swatch: [string, string] }[] = [
+  { value: "system", label: "System", swatch: ["#f4efe6", "#1e1a17"] },
+  { value: "shark", label: "Shark", swatch: ["#eef3f5", "#0d1520"] },
+  { value: "penguin", label: "Penguin", swatch: ["#fafafa", "#121212"] },
+];
 
 /** Settings holds the rules; Plan only shows their status.
  *
@@ -123,9 +135,51 @@ function Build() {
 
 function General() {
   return (
+    <div className="flex flex-col gap-4">
+      <Appearance />
+      <div className="overflow-hidden rounded-tile bg-clay-100 shadow-soft">
+        <Row icon={IconCurrency} title="Currency" sub="Philippine Peso" value="₱" />
+        <Build />
+      </div>
+    </div>
+  );
+}
+
+/** The theme picker. A device preference like the last-used wallet, not app
+ *  data — see `useTheme` in store.ts — so it's read and written locally and
+ *  never touches the shared database. */
+function Appearance() {
+  const [theme, setTheme] = useTheme();
+  return (
     <div className="overflow-hidden rounded-tile bg-clay-100 shadow-soft">
-      <Row icon={IconCurrency} title="Currency" sub="Philippine Peso" value="₱" />
-      <Build />
+      <div className="flex items-center gap-3 border-b border-sand-300/50 px-5 py-4">
+        <IconTheme aria-hidden className="size-5 shrink-0 text-umber-700" />
+        <div className="min-w-0 flex-1">
+          <p>Theme</p>
+          <p className="text-sm text-umber-700">How Manna looks on this device</p>
+        </div>
+      </div>
+      <div className="flex gap-2 p-3">
+        {THEMES.map((t) => (
+          <button
+            key={t.value}
+            type="button"
+            onClick={() => setTheme(t.value)}
+            aria-pressed={theme === t.value}
+            className={`flex flex-1 flex-col items-center gap-2 rounded-tile px-2 py-3 font-display text-sm font-semibold transition-colors duration-150 ${
+              theme === t.value
+                ? "bg-sage-500/15 text-umber-900 ring-1 ring-sage-500"
+                : "bg-clay-200/60 text-umber-700 hover:bg-clay-200"
+            }`}
+          >
+            <span aria-hidden className="flex size-8 overflow-hidden rounded-control shadow-soft">
+              <span className="flex-1" style={{ background: t.swatch[0] }} />
+              <span className="flex-1" style={{ background: t.swatch[1] }} />
+            </span>
+            {t.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

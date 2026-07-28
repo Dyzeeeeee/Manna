@@ -4,6 +4,8 @@ import { createRoot } from "react-dom/client";
 import { AuthGate } from "@data/AuthGate";
 import "@ui/tokens.css";
 
+import "../src/app.css";
+
 import Manna from "../src";
 
 /* Embedded in Tiswell, AuthGate adopts the host's session and Manna reaches
