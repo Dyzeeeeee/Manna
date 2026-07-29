@@ -251,8 +251,13 @@ const SEED_WALLETS: Wallet[] = [
    would otherwise be frozen on it — which is exactly what happened when the
    lean taxonomy replaced the original. When the stored version is behind this
    one, the current defaults are re-applied and the default rows we've since
-   retired are removed — see reconcileDefaultCategories. */
-const SEED_VERSION = "4";
+   retired are removed — see reconcileDefaultCategories.
+   5: forces one more reconcile pass to sweep out any default rows still
+   sitting under a retired id from an earlier round of taxonomy edits — a
+   rename changes a seeded category's derived id, and only a reconcile,
+   triggered by a version bump, deletes the row left behind under the old
+   one. */
+const SEED_VERSION = "5";
 const SEED_VERSION_KEY = "manna:seed-version";
 
 /* Seeded categories carry derived ids (cat-exp-…, cat-inc-…); a category you add

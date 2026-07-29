@@ -1,13 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@ui/Button";
 import { Input } from "@ui/Input";
+import { Sheet } from "@ui/Sheet";
 
 import { accentBg, CategoryIcon } from "./Amount";
 import {
   glyph,
   ICON_GROUPS,
   IconAdd,
+  IconArchive,
+  IconEdit,
   IconForward,
   iconLabel,
   iconNameFor,
@@ -37,11 +40,33 @@ export function CategoryEditor({ categories }: { categories: Category[] }) {
   const [editing, setEditing] = useState<Editing>(null);
   const [showArchived, setShowArchived] = useState(false);
 
+  /* Sheet is a fixed overlay, not a real modal — it doesn't stop the page
+     underneath from scrolling on its own, so the list keeps moving behind
+     the sheet you're editing in unless something locks it here. */
+  useEffect(() => {
+    if (editing === null) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [editing]);
+
   const parents = categories.filter((c) => c.for === kind && !c.parentId).sort(byOrder);
   const live = parents.filter((p) => !p.archived);
   const archived = categories.filter((c) => c.archived && c.for === kind);
   const subsOf = (parentId: string) =>
     categories.filter((c) => c.parentId === parentId && !c.archived).sort(byOrder);
+
+  /* One sheet for the whole editor rather than one form per row: what is being
+     edited is looked up fresh from `categories` each render, and for a sub
+     that means also finding its parent, which is where the accent and the
+     icon fallback both actually live. */
+  const editingCategory = editing && categories.find((c) => c.id === editing.id);
+  const editingParent =
+    editingCategory?.parentId !== undefined
+      ? categories.find((c) => c.id === editingCategory.parentId)
+      : undefined;
 
   async function addParent() {
     if (live.length >= MAX_PARENTS) return;
@@ -80,9 +105,9 @@ export function CategoryEditor({ categories }: { categories: Category[] }) {
     <div className="flex flex-col gap-3">
       <p className="text-sm text-umber-700">
         Two levels only. Merchants belong in the transaction note, not here — "Jollibee" is a
-        note, not a category. Keep parents between 8 and 12 so they fit one screen. Colour and
-        icon are set on the parent; subcategories take theirs from their own name, falling back
-        to the family's.
+        note, not a category. Keep parents between 8 and 12 so they fit one screen. Colour is set
+        on the parent and always inherited. A subcategory's icon can be set too — leave it alone
+        and it matches its own name, falling back to the family's.
       </p>
 
       <div className="flex rounded-control bg-clay-200 p-1">
@@ -112,72 +137,70 @@ export function CategoryEditor({ categories }: { categories: Category[] }) {
 
           return (
             <div key={parent.id} className={i === 0 ? "" : "border-t border-sand-300/50"}>
-              {editing?.level === "parent" && editing.id === parent.id ? (
-                <CategoryForm
-                  category={parent}
-                  showColour
-                  onDone={() => setEditing(null)}
+              <div className="flex items-center gap-1 px-4">
+                <button
+                  type="button"
+                  onClick={() => setOpenParent(open ? null : parent.id)}
+                  aria-expanded={open}
+                  className="flex min-w-0 flex-1 items-center gap-3 py-3 text-left"
+                >
+                  <IconForward
+                    aria-hidden
+                    className={`size-4 shrink-0 text-umber-700 transition-transform duration-200 ${
+                      open ? "rotate-90" : ""
+                    }`}
+                  />
+                  {/* the real tile, not a swatch: what you are about to change
+                      is exactly what the add sheet will show */}
+                  <CategoryIcon
+                    accent={parent.accent ?? "sage"}
+                    name={parent.name}
+                    icon={parent.icon}
+                  />
+                  <span className="min-w-0 flex-1 truncate font-display font-semibold">
+                    {parent.name}
+                  </span>
+                  <span className="shrink-0 text-sm tabular-nums text-umber-700">
+                    {subs.length}
+                  </span>
+                </button>
+                <EditButton
+                  onClick={() => setEditing({ level: "parent", id: parent.id })}
+                  label={`Edit ${parent.name}`}
                 />
-              ) : (
-                <div className="flex items-center gap-2 px-4">
-                  <button
-                    type="button"
-                    onClick={() => setOpenParent(open ? null : parent.id)}
-                    aria-expanded={open}
-                    className="flex min-w-0 flex-1 items-center gap-3 py-3 text-left"
-                  >
-                    <IconForward
-                      aria-hidden
-                      className={`size-4 shrink-0 text-umber-700 transition-transform duration-200 ${
-                        open ? "rotate-90" : ""
-                      }`}
-                    />
-                    {/* the real tile, not a swatch: what you are about to change
-                        is exactly what the add sheet will show */}
-                    <CategoryIcon
-                      accent={parent.accent ?? "sage"}
-                      name={parent.name}
-                      icon={parent.icon}
-                    />
-                    <span className="min-w-0 flex-1 truncate font-display font-semibold">
-                      {parent.name}
-                    </span>
-                    <span className="shrink-0 text-sm tabular-nums text-umber-700">
-                      {subs.length}
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setEditing({ level: "parent", id: parent.id })}
-                    className="shrink-0 rounded-control px-3 py-1.5 font-display text-xs font-semibold text-umber-700 transition-colors duration-150 hover:bg-clay-200 hover:text-umber-900"
-                  >
-                    Edit
-                  </button>
-                </div>
-              )}
+                <ArchiveButton
+                  onClick={() => void saveCategory({ ...parent, archived: true })}
+                  label={`Archive ${parent.name}`}
+                />
+              </div>
 
               {open && (
                 <div className="ml-7 border-l-2 border-sand-300/60 pb-3 pl-3">
-                  {/* Subs have no icon of their own to set — rule 1 keeps the
-                      taxonomy two levels deep and the icon lives on the parent
-                      like the colour. The glyph shown here is the one they will
-                      get: matched from their name, or the family's if nothing
-                      matches. Showing it read-only is the honest way to say so. */}
-                  {subs.map((sub) =>
-                    editing?.level === "sub" && editing.id === sub.id ? (
-                      <CategoryForm key={sub.id} category={sub} onDone={() => setEditing(null)} />
-                    ) : (
+                  {/* Subs still take colour from the parent — rule 1 keeps that
+                      inherited outright — but can now be given their own icon,
+                      the same picker a parent gets, in the same edit sheet.
+                      Left untouched, a sub's glyph is matched from its own
+                      name, or the family's if nothing matches; SubGlyph shows
+                      exactly that resolution. */}
+                  {subs.map((sub) => (
+                    <div
+                      key={sub.id}
+                      className="flex items-center gap-1 border-b border-sand-300/40 py-1 last:border-b-0"
+                    >
                       <button
-                        key={sub.id}
                         type="button"
                         onClick={() => setEditing({ level: "sub", id: sub.id })}
-                        className="flex w-full items-center gap-2.5 border-b border-sand-300/40 py-2 pr-2 text-left text-sm transition-colors duration-150 last:border-b-0 hover:text-umber-900"
+                        className="flex min-w-0 flex-1 items-center gap-2.5 py-1 text-left text-sm transition-colors duration-150 hover:text-umber-900"
                       >
                         <SubGlyph name={sub.name} inherit={parent.icon} />
                         <span className="min-w-0 flex-1 truncate">{sub.name}</span>
                       </button>
-                    ),
-                  )}
+                      <ArchiveButton
+                        onClick={() => void saveCategory({ ...sub, archived: true })}
+                        label={`Archive ${sub.name}`}
+                      />
+                    </div>
+                  ))}
                   <button
                     type="button"
                     onClick={() => void addSub(parent)}
@@ -255,6 +278,29 @@ export function CategoryEditor({ categories }: { categories: Category[] }) {
         Archiving keeps every past transaction intact — the category just stops appearing when
         you log something new.
       </p>
+
+      <Sheet
+        open={editing !== null}
+        onClose={() => setEditing(null)}
+        title={editing?.level === "parent" ? "Edit category" : "Edit subcategory"}
+      >
+        {editingCategory && (
+          <CategoryForm
+            // remounts the form when what's being edited changes, so its
+            // internal state (name/accent/icon) starts fresh rather than
+            // carrying over from whichever category was open before
+            key={editingCategory.id}
+            category={editingCategory}
+            showColour={editing?.level === "parent"}
+            accent={
+              (editing?.level === "parent" ? editingCategory.accent : editingParent?.accent) ??
+              "sage"
+            }
+            inheritIcon={editing?.level === "sub" ? editingParent?.icon : undefined}
+            onDone={() => setEditing(null)}
+          />
+        )}
+      </Sheet>
     </div>
   );
 }
@@ -265,24 +311,39 @@ function SubGlyph({ name, inherit }: { name: string; inherit?: string }) {
   return <Glyph aria-hidden className="size-4 shrink-0 text-umber-700" />;
 }
 
-/** Rename, recolour, re-icon, archive. One form for both levels; only a parent
- *  owns a colour and an icon, so only a parent is offered those two grids. */
+/** Rename, recolour (parent only), re-icon (either level), archive. One form
+ *  for both levels: colour is inherited outright below a parent, so only a
+ *  parent is offered that grid, but the icon picker is offered at both —
+ *  `accent` is always the tile's real colour (the parent's own, or the
+ *  parent's passed down for a sub) so the icon squares are tinted correctly
+ *  either way. */
 function CategoryForm({
   category,
   showColour = false,
+  accent: accentProp,
+  inheritIcon,
   onDone,
 }: {
   category: Category;
   showColour?: boolean;
+  accent: Accent;
+  /** A sub's fallback below its own name match — the parent's icon, so the
+   *  picker opens on what the row actually shows today, not a guess that
+   *  ignores inheritance. Irrelevant for a parent, which has no further
+   *  fallback of its own. */
+  inheritIcon?: string;
   onDone: () => void;
 }) {
   const [name, setName] = useState(category.name);
-  const [accent, setAccent] = useState<Accent>(category.accent ?? "sage");
-  /* Seeded through the same resolver the rest of the app uses, so a parent that
-     has never been given an icon opens on whatever its name currently earns
-     rather than on nothing — saving then makes that choice explicit instead of
+  const [accent, setAccent] = useState<Accent>(accentProp);
+  /* Seeded through the same resolver the rest of the app uses, so a category
+     that has never been given its own icon opens on whatever it currently
+     resolves to — name match, then inheritance, then the fallback tag —
+     rather than on nothing; saving then makes that choice explicit instead of
      silently changing the glyph. */
-  const [icon, setIcon] = useState<IconName>(() => iconNameFor(category.icon, category.name));
+  const [icon, setIcon] = useState<IconName>(() =>
+    iconNameFor(category.icon, category.name, inheritIcon),
+  );
 
   async function save() {
     const trimmed = name.trim();
@@ -290,20 +351,19 @@ function CategoryForm({
     await saveCategory({
       ...category,
       name: trimmed,
-      ...(showColour ? { accent, icon } : {}),
+      icon,
+      ...(showColour ? { accent } : {}),
     });
     onDone();
   }
 
   return (
-    <div className="flex flex-col gap-3 border-y border-sage-500/40 bg-clay-200/50 p-4">
+    <div className="flex flex-col gap-3">
       <div className="flex items-center gap-3">
-        {showColour && (
-          /* The live preview. Colour and icon are chosen separately below but
-             only ever seen together, so the pair is shown as the finished tile
-             rather than left to be imagined. */
-          <CategoryIcon accent={accent} name={name} icon={icon} className="size-11" />
-        )}
+        {/* The live preview. Colour and icon are chosen separately below but
+            only ever seen together, so the pair is shown as the finished tile
+            rather than left to be imagined. */}
+        <CategoryIcon accent={accent} name={name} icon={icon} className="size-11" />
         <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -315,54 +375,76 @@ function CategoryForm({
           }}
           aria-label="Category name"
           maxLength={28}
-          autoFocus
         />
       </div>
 
       {showColour && (
-        <>
-          <div className="flex flex-col gap-2">
-            <p className="font-display text-xs font-semibold uppercase tracking-wider text-umber-700">
-              Colour
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {ACCENTS.map((a) => (
-                <button
-                  key={a}
-                  type="button"
-                  onClick={() => setAccent(a)}
-                  aria-label={a}
-                  aria-pressed={a === accent}
-                  className={`size-7 rounded-control ${accentBg[a]} ${
-                    a === accent ? "ring-2 ring-umber-900 ring-offset-2 ring-offset-clay-200" : ""
-                  }`}
-                />
-              ))}
-            </div>
+        <div className="flex flex-col gap-2">
+          <p className="font-display text-xs font-semibold uppercase tracking-wider text-umber-700">
+            Colour
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {ACCENTS.map((a) => (
+              <button
+                key={a}
+                type="button"
+                onClick={() => setAccent(a)}
+                aria-label={a}
+                aria-pressed={a === accent}
+                className={`size-7 rounded-control ${accentBg[a]} ${
+                  a === accent ? "ring-2 ring-umber-900 ring-offset-2 ring-offset-clay-200" : ""
+                }`}
+              />
+            ))}
           </div>
-
-          <IconPicker accent={accent} value={icon} onChange={setIcon} />
-        </>
+        </div>
       )}
 
-      <div className="flex items-center justify-between gap-2">
-        <Button
-          variant="ghost"
-          onClick={() => void saveCategory({ ...category, archived: true }).then(onDone)}
-          className="px-4"
-        >
-          Archive
+      <IconPicker accent={accent} value={icon} onChange={setIcon} />
+
+      <div className="flex justify-end gap-2">
+        <Button variant="ghost" onClick={onDone} className="px-4">
+          Cancel
         </Button>
-        <div className="flex gap-2">
-          <Button variant="ghost" onClick={onDone} className="px-4">
-            Cancel
-          </Button>
-          <Button onClick={() => void save()} disabled={!name.trim()}>
-            Save
-          </Button>
-        </div>
+        <Button onClick={() => void save()} disabled={!name.trim()}>
+          Save
+        </Button>
       </div>
     </div>
+  );
+}
+
+/** A parent's row is already a button (tap to expand); this is the second
+ *  action beside it, so it reads as a glyph next to Archive rather than a
+ *  label competing with the category name for attention. */
+function EditButton({ onClick, label }: { onClick: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className="flex size-9 shrink-0 items-center justify-center rounded-control text-umber-700 transition-colors duration-150 hover:bg-clay-200 hover:text-umber-900"
+    >
+      <IconEdit className="size-4" />
+    </button>
+  );
+}
+
+/** Archive lives on the row, not in the edit sheet — same placement
+ *  RuleEditors.tsx uses for its own DeleteButton, and one fewer thing
+ *  crowding the sheet's Cancel/Save row. Neutral hover rather than a warning
+ *  colour: unlike a hard delete, archiving keeps every past transaction
+ *  intact and can be undone from the Archived list below. */
+function ArchiveButton({ onClick, label }: { onClick: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className="flex size-9 shrink-0 items-center justify-center rounded-control text-umber-700 transition-colors duration-150 hover:bg-clay-200 hover:text-umber-900"
+    >
+      <IconArchive className="size-4" />
+    </button>
   );
 }
 

@@ -65,17 +65,21 @@ export function Settings({
 
       <h1 className="font-display text-2xl font-semibold">Settings</h1>
 
-      <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+      {/* Four equal columns, icon over label — the same stacked shape the
+          bottom nav uses, so all four always fit with nothing to scroll to
+          find. A horizontal row of pills at this width either scrolled or
+          wrapped mid-word; a grid never does either. */}
+      <div className="grid grid-cols-4 gap-1 rounded-tile bg-clay-100 p-1 shadow-soft">
         {TABS.map((t) => (
           <button
             key={t.value}
             type="button"
             onClick={() => setTab(t.value)}
             aria-pressed={tab === t.value}
-            className={`flex min-h-9 shrink-0 items-center gap-1.5 rounded-control px-4 font-display text-sm font-semibold transition-colors duration-150 ${
+            className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-control px-1 py-2 font-display text-xs font-semibold transition-colors duration-150 ${
               tab === t.value
                 ? "bg-sage-500 text-clay-50"
-                : "bg-clay-100 text-umber-700 hover:bg-clay-200 hover:text-umber-900"
+                : "text-umber-700 hover:bg-clay-200 hover:text-umber-900"
             }`}
           >
             <t.icon aria-hidden className="size-4" />

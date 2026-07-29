@@ -17,6 +17,7 @@ import {
   RiAddLine,
   RiAncientGateFill,
   RiAncientGateLine,
+  RiArchiveLine,
   RiArrowLeftDownLine,
   RiArrowLeftRightLine,
   RiArrowLeftSLine,
@@ -237,6 +238,7 @@ export const IconClose = RiCloseLine;
 export const IconAdd = RiAddLine;
 export const IconEdit = RiPencilLine;
 export const IconDelete = RiDeleteBin6Line;
+export const IconArchive = RiArchiveLine;
 export const IconBackspace = RiDeleteBack2Line;
 export const IconSettings = RiSettings4Line;
 /** "Show me everything" — the escape hatch out of a shortlist into the full set. */
