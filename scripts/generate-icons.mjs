@@ -1,31 +1,36 @@
 // Regenerates public/icons/* for Manna. The mark is a vector trace of the
 // Manna Finance brand mark (Manna.png at repo root, the same "reference file
-// at repo root" convention TisWell uses for TisWell.png): a crossing M whose
-// diagonals meet over a gold flame, with the right stroke rising into a
-// growth arrow. Paths were extracted from that PNG with marching-squares
-// contour tracing (see git history for the script) rather than hand-drawn,
-// so they follow the source closely.
+// at repo root" convention TisWell uses for TisWell.png): a solid green M
+// whose left stroke is a plain pillar and whose right stroke splits — through
+// two thin reveal lines — into a lighter olive lobe holding a gold dot.
+// Paths were extracted from that PNG with marching-squares contour tracing
+// rather than hand-drawn, so they follow the source closely.
 // Run with: pnpm icons
 import { mkdir, writeFile } from "node:fs/promises";
 
 import sharp from "sharp";
 
 const BG = "#F1DECC";
-const GREEN = "#183820";
-const GOLD = "#B09860";
+const GREEN = "#263830";
+const OLIVE = "#64745C";
+const GOLD = "#B29863";
 const CENTER = 140;
 
 // Traced in a Y-down pixel space with (140, 140) at the mark's own bounding-
 // box center; OUTER is half that bbox's longest side, i.e. the same
 // "outermost painted radius" role OUTER plays in Tiswell's generator.
 const GREEN_D =
-  "M 320.58 279.77 L 314.58 280.47 L 308.58 279.11 L 303.33 274.77 L 300.67 267.77 L 300.75 66.77 L 300.35 61.77 L 298.58 59.60 L 295.58 58.87 L 289.58 62.58 L 163.71 152.77 L 180.87 176.77 L 190.00 192.77 L 195.91 208.77 L 197.81 222.77 L 195.98 239.77 L 190.01 254.77 L 180.89 266.77 L 168.58 276.10 L 157.99 279.77 L 170.82 263.77 L 177.25 244.77 L 177.05 226.77 L 169.04 205.77 L 156.83 188.77 L 140.58 172.50 L 131.58 179.38 L 120.22 191.77 L 107.20 212.77 L 103.21 225.77 L 102.04 237.77 L 107.12 259.77 L 121.58 280.18 L 106.58 272.99 L 93.19 259.77 L 85.21 243.77 L 82.34 227.77 L 84.20 208.77 L 90.39 191.77 L 100.28 174.77 L 117.00 152.77 L -0.42 61.51 L -6.42 57.59 L -12.42 56.05 L -17.84 57.77 L -20.37 63.77 L -20.47 267.77 L -23.16 274.77 L -28.42 279.08 L -35.42 280.57 L -43.42 278.31 L -49.54 270.77 L -50.32 261.77 L -50.26 56.77 L -48.62 46.77 L -44.70 38.77 L -35.42 29.48 L -23.42 24.51 L -7.42 24.53 L 7.58 29.39 L 33.58 47.50 L 140.58 130.72 L 275.10 33.77 L 252.80 24.77 L 318.58 -0.57 L 326.58 0.44 L 329.58 4.08 L 330.29 7.77 L 330.32 266.77 L 327.58 274.50 Z";
+  "M 150.75 177.65 L 150.32 121.50 L 152.56 112.50 L 159.31 100.50 L 245.75 30.30 L 251.75 27.32 L 261.75 26.00 L 267.75 27.32 L 275.75 32.06 L 280.48 38.50 L 283.25 47.50 L 283.18 65.50 L 280.48 73.50 L 276.19 79.50 L 161.75 164.06 Z M 19.75 253.68 L 11.75 250.70 L 3.31 243.50 L -0.44 237.50 L -3.68 225.50 L -3.75 59.50 L -0.25 44.09 L 7.75 34.00 L 18.75 28.32 L 28.75 28.00 L 41.75 34.06 L 114.75 93.06 L 122.95 101.50 L 128.94 113.50 L 131.18 123.50 L 131.21 176.50 L 129.75 178.46 L 118.75 164.06 L 67.03 123.50 L 58.75 118.97 L 58.18 251.50 L 54.75 254.00 Z M 185.16 162.50 L 282.78 90.50 L 283.18 116.50 L 280.03 121.50 L 264.75 129.68 Z";
+
+// second subpath is the gold dot's hole, cut via fill-rule evenodd
+const OLIVE_D =
+  "M 283.75 130.97 L 283.18 226.50 L 278.95 237.50 L 271.75 245.94 L 261.75 251.68 L 251.75 253.92 L 180.75 254.00 L 167.75 250.63 L 158.31 243.50 L 153.02 235.50 L 150.32 226.50 L 150.32 207.50 L 156.55 191.50 L 164.75 183.06 L 173.75 177.38 Z M 234.75 221.92 L 227.75 218.70 L 222.62 213.50 L 220.32 206.50 L 221.32 199.50 L 224.31 193.50 L 229.75 189.38 L 241.75 188.08 L 247.03 190.50 L 251.95 195.50 L 254.18 201.50 L 254.18 208.50 L 248.75 217.69 L 240.75 221.68 Z";
 
 const GOLD_D =
-  "M 139.58 272.88 L 131.58 267.87 L 124.37 259.77 L 119.52 248.77 L 118.20 238.77 L 119.48 228.77 L 124.34 215.77 L 133.42 202.77 L 139.58 197.31 L 143.47 199.77 L 148.84 205.77 L 155.58 215.77 L 159.81 225.77 L 161.81 237.77 L 159.70 250.77 L 154.84 260.77 L 150.58 265.79 L 145.58 269.97 Z";
+  "M 234.75 221.92 L 227.75 218.70 L 222.62 213.50 L 220.32 206.50 L 221.32 199.50 L 224.31 193.50 L 229.75 189.38 L 241.75 188.08 L 247.03 190.50 L 251.95 195.50 L 254.18 201.50 L 254.18 208.50 L 248.75 217.69 L 240.75 221.68 Z";
 
-const MARK = `<path d="${GREEN_D}" fill="${GREEN}" fill-rule="evenodd"/>\n    <path d="${GOLD_D}" fill="${GOLD}" fill-rule="evenodd"/>`;
-const OUTER = 190.32;
+const MARK = `<path d="${GREEN_D}" fill="${GREEN}" fill-rule="evenodd"/>\n    <path d="${OLIVE_D}" fill="${OLIVE}" fill-rule="evenodd"/>\n    <path d="${GOLD_D}" fill="${GOLD}" fill-rule="evenodd"/>`;
+const OUTER = 143.75;
 
 // frac = fraction of the canvas the mark's outer diameter should span;
 // bg: launcher icons must stay opaque (maskable requires full bleed; iOS
