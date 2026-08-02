@@ -1,11 +1,10 @@
 import { Button } from "@ui/Button";
 
 import { Amount, CategoryIcon } from "./Amount";
-import { captureConfigured } from "./capture";
-import { CaptureBox } from "./CaptureBox";
 import {
   glyph,
   IconAdd,
+  IconAssistant,
   IconForward,
   IconIn,
   IconOut,
@@ -32,6 +31,7 @@ import {
   type TxnKind,
   type Wallet,
 } from "./money";
+import { stewiConfigured } from "./stewiClient";
 import { TxnList } from "./TxnList";
 
 const IconWallets = NAV_GLYPHS.wallets.line;
@@ -51,10 +51,10 @@ interface HomeProps {
   allotments: Allotment[];
   onSelect: (txn: Txn) => void;
   onNavigate: (tab: "month" | "plan") => void;
+  /** Falls back to the manual wizard when Stewi isn't configured. */
   onAdd: (kind: TxnKind) => void;
-  /** Send a spoken/typed sentence to the parse Worker; resolves once the add
-   *  sheet has opened on the resulting draft, rejects if the parse failed. */
-  onCapture: (sentence: string) => Promise<void>;
+  /** Opens Stewi's overlay. */
+  onOpenStewi: () => void;
   onSettings: () => void;
   /** The transaction just logged, briefly marked so the save is visible. */
   highlightId?: string;
@@ -79,7 +79,7 @@ export function Home({
   onSelect,
   onNavigate,
   onAdd,
-  onCapture,
+  onOpenStewi,
   onSettings,
   highlightId,
 }: HomeProps) {
@@ -106,20 +106,25 @@ export function Home({
             type="button"
             onClick={onSettings}
             aria-label="Settings"
-            className="flex size-11 shrink-0 items-center justify-center rounded-control text-umber-700 transition-colors duration-150 hover:bg-clay-200 hover:text-umber-900"
+            className="flex size-11 shrink-0 items-center justify-center rounded-control border border-white/10 bg-clay-200/40 text-umber-700 backdrop-blur-lg transition-colors duration-150 hover:bg-clay-200/70 hover:text-umber-900"
           >
             <IconSettings className="size-5" />
           </button>
         </header>
 
-        <div className="flex flex-col gap-1 rounded-tile bg-balance p-6 text-balance-ink shadow-soft">
+        <div className="relative flex flex-col gap-1 overflow-hidden rounded-tile bg-balance/92 p-6 text-balance-ink shadow-glass backdrop-blur-xl">
+          {/* the sheen: a glass pane catching light along its top edge */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-linear-to-b from-white/10 to-transparent"
+          />
           <p className="flex items-center gap-1.5 font-display text-sm font-semibold text-balance-ink/60">
             <IconWallets aria-hidden className="size-4" />
             Spendable now
           </p>
           <Amount
             cents={spendable}
-            className="font-display text-4xl font-semibold leading-none sm:text-5xl"
+            className="font-display text-5xl font-semibold leading-none tracking-tight sm:text-6xl"
           />
           <p className="pt-2 text-sm text-balance-ink/70">
             Across {wallets.length} {wallets.length === 1 ? "wallet" : "wallets"} · savings
@@ -127,10 +132,11 @@ export function Home({
           </p>
         </div>
 
-        {/* The fast path, when it's wired up: say what you spent and confirm on
-            the review panel. The centre + and the numpad wizard remain the
-            manual and offline way in. */}
-        {captureConfigured && <CaptureBox onCapture={onCapture} />}
+        {/* Stewi's launcher, when it's wired up: the fast path in is a
+            conversation, not a kind picker. The centre + opens the same
+            overlay from any tab; the numpad wizard stays reachable from
+            Stewi's own empty state as the offline/manual way in. */}
+        {stewiConfigured && <StewiLauncher onOpen={onOpenStewi} />}
 
         <section className="flex flex-col gap-2">
           <h2 className="flex items-center gap-1.5 px-1 font-display text-sm font-semibold text-umber-700">
@@ -144,7 +150,7 @@ export function Home({
           </div>
 
           {pace.hasHistory && (
-            <div className="flex items-center justify-between gap-3 rounded-tile bg-clay-100 px-4 py-3 text-sm shadow-soft">
+            <div className="flex items-center justify-between gap-3 rounded-tile border border-white/15 bg-raised/42 px-4 py-3 text-sm shadow-glass backdrop-blur-lg">
               <span className="text-umber-700">Against your five-month average</span>
               <span
                 className={`shrink-0 font-display font-semibold tabular-nums ${
@@ -166,7 +172,7 @@ export function Home({
               <IconAlert aria-hidden className="size-4" />
               Needs attention
             </h2>
-            <div className="overflow-hidden rounded-tile bg-clay-100 shadow-soft">
+            <div className="overflow-hidden rounded-tile border border-white/15 bg-raised/42 shadow-glass backdrop-blur-lg">
               {hot.map((p, i) => {
                 const { own, inherited } = glyphOf(categories, p.allotment.categoryId);
                 const category = findCategory(categories, p.allotment.categoryId);
@@ -175,8 +181,8 @@ export function Home({
                     key={p.allotment.id}
                     type="button"
                     onClick={() => onNavigate("plan")}
-                    className={`flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors duration-150 hover:bg-clay-200 ${
-                      i === 0 ? "" : "border-t border-sand-300/50"
+                    className={`flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors duration-150 hover:bg-clay-200/40 ${
+                      i === 0 ? "" : "border-t border-sand-300/40"
                     }`}
                   >
                     <CategoryIcon
@@ -208,7 +214,7 @@ export function Home({
 
         <Button onClick={() => onAdd("expense")} className="hidden gap-2 lg:inline-flex">
           <IconAdd className="size-4" />
-          Log something
+          {stewiConfigured ? "Talk to Stewi" : "Log something"}
         </Button>
       </div>
 
@@ -231,7 +237,7 @@ export function Home({
           <button
             type="button"
             onClick={() => onNavigate("month")}
-            className="flex min-h-12 items-center justify-center gap-1 rounded-tile border border-sand-300/60 font-display text-sm font-semibold text-umber-700 transition-colors duration-150 hover:bg-clay-100 hover:text-umber-900"
+            className="flex min-h-12 items-center justify-center gap-1 rounded-tile border border-white/15 bg-raised/40 font-display text-sm font-semibold text-umber-700 backdrop-blur-lg transition-colors duration-150 hover:bg-raised/70 hover:text-umber-900"
           >
             See the whole month
             <IconForward aria-hidden className="size-4" />
@@ -239,6 +245,33 @@ export function Home({
         )}
       </section>
     </div>
+  );
+}
+
+/** The teaser that opens Stewi's overlay — styled like the chat bubble it
+ *  leads into, so tapping it reads as starting a conversation rather than
+ *  opening a form. */
+function StewiLauncher({ onOpen }: { onOpen: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="flex items-center gap-3 rounded-tile border border-sage-500/25 bg-sage-500/12 p-3 text-left shadow-glass backdrop-blur-lg transition duration-150 hover:bg-sage-500/18 active:brightness-95"
+    >
+      <span
+        aria-hidden
+        className="flex size-9 shrink-0 items-center justify-center rounded-full bg-sage-500 text-clay-50"
+      >
+        <IconAssistant className="size-5" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-display text-sm font-semibold text-sage-500">Ask Stewi</span>
+        <span className="block truncate text-sm text-umber-700">
+          Tell me what happened, or ask about your month
+        </span>
+      </span>
+      <IconForward aria-hidden className="size-4 shrink-0 text-umber-700" />
+    </button>
   );
 }
 
@@ -254,7 +287,7 @@ function Stat({
   tone?: "in";
 }) {
   return (
-    <div className="rounded-tile bg-clay-100 px-3 py-3 text-center shadow-soft">
+    <div className="rounded-tile border border-white/15 bg-raised/42 px-3 py-3 text-center shadow-glass backdrop-blur-lg">
       <p className="flex items-center justify-center gap-1 font-display text-xs font-semibold uppercase tracking-wider text-umber-700">
         <Glyph aria-hidden className="size-3.5" />
         {label}

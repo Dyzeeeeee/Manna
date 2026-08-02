@@ -1,11 +1,17 @@
 # manna-parse
 
-The natural-language capture endpoint. A **separate** Cloudflare Worker so the
-PWA's own deploy (`../wrangler.jsonc`) stays pure static assets — this is the only
-place the Anthropic API key lives, and it never reaches the browser.
+Stewi's endpoint. A **separate** Cloudflare Worker so the PWA's own deploy
+(`../wrangler.jsonc`) stays pure static assets — this is the only place the
+Anthropic API key lives, and it never reaches the browser. Kept the deployed
+name from the single-shot capture endpoint this replaces, to avoid an
+env-var/redeploy churn for what is, underneath, still "the one Worker for the
+AI feature."
 
-Say _"200 on Jollibee today"_ → this returns a transaction **draft** the add sheet
-opens on the review panel. Nothing is written until you confirm.
+This Worker makes exactly **one Claude call per request** and never executes
+a tool itself — it has no database access, so every tool (read or write) is
+resolved client-side in `../src/stewiClient.ts`. See `../src/assistant.ts` for
+the tool schemas, the system prompt, and the sanitisers, all shared verbatim
+with the app and unit-tested in `../src/assistant.test.ts`.
 
 ## Deploy
 
@@ -26,9 +32,11 @@ Local run: `npx wrangler dev -c worker/wrangler.jsonc` (uses `.dev.vars` for sec
 
 ```jsonc
 {
-  "sentence": "200 on jollibee today",
+  "messages": [ /* the running StewiMessage[] conversation, see ../src/assistant.ts */ ],
   "categories": [ /* the live category list from useCategories() */ ],
   "wallets":    [ /* the live wallet list from useWallets() */ ],
+  "recurring":  [ /* the live recurring list from useRecurring() */ ],
+  "debts":      [ /* the live debt list from useDebts() */ ],
   "today": "2026-07-27"   // optional; the user's local date for "today"/"yesterday"
 }
 ```
@@ -37,37 +45,32 @@ Response:
 
 ```jsonc
 {
-  "draft": { "kind": "expense", "amountCents": 20000, "categoryId": "food", "note": "Jollibee" },
-  "confidence": "high"
+  "content": [
+    { "type": "text", "text": "…" },
+    { "type": "tool_use", "id": "…", "name": "propose_transaction", "input": { "…": "…" } }
+  ]
 }
 ```
 
-`draft` is an `AddDraft` (see `../src/parse.ts`) — pass it straight to `<AddSheet draft={draft} … />`.
-The prompt, the id-pinned schema, and the validation all live in `../src/parse.ts`,
-shared verbatim with the app and unit-tested in `../src/parse.test.ts`.
+`content` is Claude's own response content blocks, narrowed to `StewiContentBlock[]`
+(text and tool_use only — see `../src/assistant.ts`). The client appends this as
+the next assistant turn and decides what to do with any `tool_use` blocks:
 
-## Client call (for the capture UI, not built yet)
+- **Read tools** (`get_overview`, `get_category_breakdown`, `get_allotment_status`,
+  `get_recurring_status`, `get_debts`, `search_transactions`) are answered
+  immediately by `runReadTool` against data already loaded in the browser — no
+  user interaction, and the client calls this Worker again automatically with
+  the `tool_result` appended.
+- **Write tools** (`propose_transaction`, `propose_transaction_edit`,
+  `propose_transaction_delete`, `propose_recurring_approval`,
+  `propose_recurring_skip`, `propose_debt_payment`) are turned into a
+  `ProposedAction` by `sanitizeProposedAction`, shown to the user, and only
+  carried out — via the exact same store functions the manual screens use —
+  once they confirm. Nothing this Worker returns is ever written by itself.
 
-```ts
-const res = await fetch(import.meta.env.VITE_PARSE_URL, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${import.meta.env.VITE_PARSE_TOKEN}`,
-  },
-  body: JSON.stringify({
-    sentence,
-    categories,
-    wallets,
-    today: new Date().toISOString().slice(0, 10),
-  }),
-});
-const { draft } = await res.json();
-// then: hold the draft in Manna state and open the sheet on it
-```
+## On `APP_TOKEN` in the client
 
-> **On `APP_TOKEN` in the client:** it ships in the PWA bundle, so it's a soft gate
-> — it plus the CORS origin allowlist deters casual abuse of a paid endpoint, but
-> it is not a hard secret. The Anthropic key is the thing that must stay
-> server-side, and it does. If you want a hard gate later, put Cloudflare Access
-> in front of the Worker.
+It ships in the PWA bundle, so it's a soft gate — it plus the CORS origin
+allowlist deters casual abuse of a paid endpoint, but it is not a hard secret.
+The Anthropic key is the thing that must stay server-side, and it does. If you
+want a hard gate later, put Cloudflare Access in front of the Worker.

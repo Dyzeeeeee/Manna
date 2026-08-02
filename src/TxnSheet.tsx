@@ -30,21 +30,36 @@ interface TxnSheetProps {
   categories: Category[];
   wallets: Wallet[];
   onClose: () => void;
+  /** Fires right before `onClose`, only when the edit actually saved — lets a
+   *  caller that opened this sheet on a proposed change (Stewi) tell the
+   *  difference between "saved" and "backed out" without the sheet needing to
+   *  know anything about who opened it. */
+  onSaved?: (txn: Txn) => void;
+  /** Same idea as `onSaved`, for the delete path. */
+  onDeleted?: (txn: Txn) => void;
 }
 
 /** The other half of amount-only logging: everything the add form skipped is
  *  editable here. Without this, fast logging would just mean bad data. */
-export function TxnSheet({ txn, categories, wallets, onClose }: TxnSheetProps) {
+export function TxnSheet({ txn, categories, wallets, onClose, onSaved, onDeleted }: TxnSheetProps) {
   if (!txn) return null;
   // keyed on the transaction so switching rows resets the draft state
   return (
     <Sheet open onClose={onClose} title="Edit">
-      <TxnForm key={txn.id} txn={txn} categories={categories} wallets={wallets} onClose={onClose} />
+      <TxnForm
+        key={txn.id}
+        txn={txn}
+        categories={categories}
+        wallets={wallets}
+        onClose={onClose}
+        onSaved={onSaved}
+        onDeleted={onDeleted}
+      />
     </Sheet>
   );
 }
 
-function TxnForm({ txn, categories, wallets, onClose }: TxnSheetProps & { txn: Txn }) {
+function TxnForm({ txn, categories, wallets, onClose, onSaved, onDeleted }: TxnSheetProps & { txn: Txn }) {
   const [amount, setAmount] = useState(String(txn.amountCents / 100));
   const [note, setNote] = useState(txn.note);
   const [categoryId, setCategoryId] = useState(
@@ -86,16 +101,19 @@ function TxnForm({ txn, categories, wallets, onClose }: TxnSheetProps & { txn: T
     ).toISOString();
 
     const base = { id: txn.id, amountCents, note: note.trim(), createdAt };
-    await updateTxn(
+    const updated = (
       transfer
         ? { ...base, kind: "transfer", walletId, toWalletId }
-        : { ...base, kind: txn.kind, walletId, categoryId: categoryId || undefined },
-    );
+        : { ...base, kind: txn.kind, walletId, categoryId: categoryId || undefined }
+    ) as Txn;
+    await updateTxn(updated);
+    onSaved?.(updated);
     onClose();
   }
 
   async function destroy() {
     await removeTxn(txn.id);
+    onDeleted?.(txn);
     onClose();
   }
 

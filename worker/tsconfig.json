@@ -13,5 +13,5 @@
     "verbatimModuleSyntax": true,
     "types": ["@cloudflare/workers-types"]
   },
-  "include": ["index.ts", "../src/parse.ts", "../src/money.ts"]
+  "include": ["index.ts", "../src/assistant.ts", "../src/parse.ts", "../src/money.ts"]
 }

@@ -66,7 +66,7 @@ export function TxnList({
 
   if (!groupByDay) {
     return (
-      <div className="overflow-hidden rounded-tile bg-clay-100 shadow-soft">
+      <div className="overflow-hidden rounded-tile border border-white/15 bg-raised/42 shadow-glass backdrop-blur-lg">
         {txns.map((t, i) => (
           <Row
             key={t.id}
@@ -102,7 +102,7 @@ export function TxnList({
               </h3>
               <Amount cents={net} className="text-sm text-umber-700" />
             </div>
-            <div className="overflow-hidden rounded-tile bg-clay-100 shadow-soft">
+            <div className="overflow-hidden rounded-tile border border-white/15 bg-raised/42 shadow-glass backdrop-blur-lg">
               {day.items.map((t, i) => (
                 <Row
                   key={t.id}
@@ -161,8 +161,8 @@ function Row({
       type="button"
       onClick={() => onSelect(txn)}
       className={`flex w-full items-center gap-3 px-5 py-3 text-left transition-colors duration-300 ${
-        highlighted ? "bg-sage-500/15" : "hover:bg-clay-200"
-      } ${first ? "" : "border-t border-sand-300/50"}`}
+        highlighted ? "bg-sage-500/15" : "hover:bg-clay-200/40"
+      } ${first ? "" : "border-t border-sand-300/40"}`}
     >
       <CategoryIcon
         accent={accentOf(categories, categoryId)}

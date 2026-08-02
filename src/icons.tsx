@@ -161,6 +161,7 @@ import {
   RiRestaurant2Line,
   RiRoadsterFill,
   RiRoadsterLine,
+  RiRobot2Fill,
   RiRocket2Fill,
   RiRocket2Line,
   RiRunFill,
@@ -248,6 +249,11 @@ export const IconApprove = RiCheckLine;
 export const IconSkip = RiSkipForwardLine;
 export const IconMic = RiMicLine;
 export const IconSend = RiSendPlane2Fill;
+/** The natural-language capture box's avatar — sat in a solid circle like a
+ *  chat contact, so the box reads as something you talk to rather than a form
+ *  field. The one place outside the category catalogue a Fill glyph is used
+ *  standalone, for the same reason IconSend is Fill: it sits on a solid tint. */
+export const IconAssistant = RiRobot2Fill;
 
 /** The three kinds of movement, used wherever a transaction's direction has to
  *  read at a glance: the kind toggle, the review panel, list rows, stat tiles.

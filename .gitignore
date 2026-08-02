@@ -11,3 +11,10 @@ dist/
 # wrangler's local secrets for `wrangler dev` (Anthropic key, APP_TOKEN)
 .dev.vars
 **/.dev.vars
+
+# wrangler/Miniflare's local runtime state — SQLite caches, temp bundles.
+# Regenerates on every `wrangler dev`; never meant to be committed. Vite's
+# dev server also excludes this from its file watcher (see vite.config.ts) —
+# unwatched writes here were causing full page reloads on every Worker call.
+.wrangler/
+**/.wrangler/

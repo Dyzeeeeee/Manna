@@ -142,6 +142,13 @@ export default defineConfig({
     // plain http on a custom name, won't run the PWA/offline layer.
     allowedHosts: ["manna.localhost", "manna.test"],
     fs: { allow: [here("."), TISWELL] },
+    // Miniflare (the local Worker runtime behind `wrangler dev`) writes its
+    // state/observability traces to worker/.wrangler on every single request
+    // — Stewi hits that Worker on every message. Left unignored, the dev
+    // server's own file watcher sees those writes, can't map them to any
+    // module, and falls back to a full page reload — which looks exactly
+    // like sending a message to Stewi resets the whole app.
+    watch: { ignored: ["**/.wrangler/**"] },
   },
   preview: {
     host: true,
