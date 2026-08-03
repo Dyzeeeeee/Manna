@@ -1,8 +1,9 @@
 // Regenerates public/icons/* for Manna. The mark is a vector trace of the
 // Manna Finance brand mark (Manna.png at repo root, the same "reference file
-// at repo root" convention TisWell uses for TisWell.png): a solid green M
-// whose left stroke is a plain pillar and whose right stroke splits — through
-// two thin reveal lines — into a lighter olive lobe holding a gold dot.
+// at repo root" convention TisWell uses for TisWell.png): a solid green M in
+// two pieces — a plain left pillar and a right stroke that folds over into a
+// wallet, the fold read as thin background-coloured reveal lines rather than
+// drawn strokes, with a gold dot as the wallet's clasp.
 // Paths were extracted from that PNG with marching-squares contour tracing
 // rather than hand-drawn, so they follow the source closely.
 // Run with: pnpm icons
@@ -11,26 +12,38 @@ import { mkdir, writeFile } from "node:fs/promises";
 import sharp from "sharp";
 
 const BG = "#F1DECC";
-const GREEN = "#263830";
-const OLIVE = "#64745C";
-const GOLD = "#B29863";
-const CENTER = 140;
+const GREEN = "#22382D";
+const GOLD = "#BBA16A";
 
 // Traced in a Y-down pixel space with (140, 140) at the mark's own bounding-
-// box center; OUTER is half that bbox's longest side, i.e. the same
-// "outermost painted radius" role OUTER plays in Tiswell's generator.
-const GREEN_D =
-  "M 150.75 177.65 L 150.32 121.50 L 152.56 112.50 L 159.31 100.50 L 245.75 30.30 L 251.75 27.32 L 261.75 26.00 L 267.75 27.32 L 275.75 32.06 L 280.48 38.50 L 283.25 47.50 L 283.18 65.50 L 280.48 73.50 L 276.19 79.50 L 161.75 164.06 Z M 19.75 253.68 L 11.75 250.70 L 3.31 243.50 L -0.44 237.50 L -3.68 225.50 L -3.75 59.50 L -0.25 44.09 L 7.75 34.00 L 18.75 28.32 L 28.75 28.00 L 41.75 34.06 L 114.75 93.06 L 122.95 101.50 L 128.94 113.50 L 131.18 123.50 L 131.21 176.50 L 129.75 178.46 L 118.75 164.06 L 67.03 123.50 L 58.75 118.97 L 58.18 251.50 L 54.75 254.00 Z M 185.16 162.50 L 282.78 90.50 L 283.18 116.50 L 280.03 121.50 L 264.75 129.68 Z";
+// box center; OUTER is half that bbox's longest side — here the width, since
+// the mark is landscape — i.e. the same "outermost painted radius" role OUTER
+// plays in Tiswell's generator.
+const OUTER = 140;
 
-// second subpath is the gold dot's hole, cut via fill-rule evenodd
-const OLIVE_D =
-  "M 283.75 130.97 L 283.18 226.50 L 278.95 237.50 L 271.75 245.94 L 261.75 251.68 L 251.75 253.92 L 180.75 254.00 L 167.75 250.63 L 158.31 243.50 L 153.02 235.50 L 150.32 226.50 L 150.32 207.50 L 156.55 191.50 L 164.75 183.06 L 173.75 177.38 Z M 234.75 221.92 L 227.75 218.70 L 222.62 213.50 L 220.32 206.50 L 221.32 199.50 L 224.31 193.50 L 229.75 189.38 L 241.75 188.08 L 247.03 190.50 L 251.95 195.50 L 254.18 201.50 L 254.18 208.50 L 248.75 217.69 L 240.75 221.68 Z";
+// The clasp is a true circle in the source, so it is emitted as arcs rather
+// than as its traced polygon: at 48px a 24-gon dot visibly flattens. The same
+// circle is cut out of the green as a hole, and the gold is drawn a third of a
+// unit wider so no background hairline shows through the seam.
+const DOT = [229.34, 170.94];
+const DOT_R = 13.15;
+const circle = (cx, cy, r) =>
+  `M ${cx - r} ${cy} A ${r} ${r} 0 1 0 ${cx + r} ${cy} A ${r} ${r} 0 1 0 ${cx - r} ${cy} Z`;
 
-const GOLD_D =
-  "M 234.75 221.92 L 227.75 218.70 L 222.62 213.50 L 220.32 206.50 L 221.32 199.50 L 224.31 193.50 L 229.75 189.38 L 241.75 188.08 L 247.03 190.50 L 251.95 195.50 L 254.18 201.50 L 254.18 208.50 L 248.75 217.69 L 240.75 221.68 Z";
+// four subpaths: right stroke, left pillar, wallet body, clasp hole.
+// The wallet body is its own island — the reveal lines fully separate it from
+// the stroke above — and the hole is nested inside it, so evenodd is what
+// makes the clasp punch through.
+const GREEN_D = [
+  "M 262.60 18.95 L 268.40 18.56 L 271.49 20.11 L 273.43 22.04 L 275.75 27.46 L 275.75 97.07 L 271.49 102.87 L 204.97 137.68 L 196.08 145.03 L 192.21 154.31 L 192.21 196.08 L 194.53 202.27 L 200.33 208.84 L 204.20 211.16 L 210.39 212.71 L 273.81 210.39 L 275.75 212.32 L 275.75 223.15 L 274.20 227.79 L 271.88 231.66 L 266.08 237.46 L 256.02 241.33 L 170.17 241.33 L 162.43 245.19 L 143.09 260.66 L 141.93 257.18 L 142.71 256.41 L 146.57 148.12 L 147.35 147.35 L 147.35 138.84 L 149.67 131.88 L 155.08 123.37 L 256.80 21.66 L 262.60 18.95 Z",
+  "M 6.57 18.95 L 13.15 18.56 L 17.79 20.88 L 124.14 128.01 L 128.01 138.07 L 128.78 210.00 L 129.56 210.77 L 129.17 260.66 L 49.50 146.19 L 47.57 149.67 L 49.12 157.40 L 49.12 239.39 L 47.18 241.33 L 18.56 241.33 L 9.28 237.46 L 3.48 231.66 L -0.39 222.38 L -0.39 27.46 L 1.16 23.59 L 6.57 18.95 Z",
+  "M 277.29 108.67 L 278.45 108.29 L 279.61 109.45 L 279.61 197.62 L 278.84 199.17 L 273.81 202.65 L 229.72 203.43 L 228.95 204.20 L 210.39 204.20 L 206.52 202.65 L 202.27 198.40 L 200.72 194.53 L 200.72 154.31 L 203.04 149.67 L 206.52 146.19 L 211.93 143.09 L 277.29 108.67 Z",
+  circle(DOT[0], DOT[1], DOT_R),
+].join(" ");
 
-const MARK = `<path d="${GREEN_D}" fill="${GREEN}" fill-rule="evenodd"/>\n    <path d="${OLIVE_D}" fill="${OLIVE}" fill-rule="evenodd"/>\n    <path d="${GOLD_D}" fill="${GOLD}" fill-rule="evenodd"/>`;
-const OUTER = 143.75;
+const GOLD_D = circle(DOT[0], DOT[1], DOT_R + 0.33);
+
+const MARK = `<path d="${GREEN_D}" fill="${GREEN}" fill-rule="evenodd"/>\n    <path d="${GOLD_D}" fill="${GOLD}"/>`;
 
 // frac = fraction of the canvas the mark's outer diameter should span;
 // bg: launcher icons must stay opaque (maskable requires full bleed; iOS
